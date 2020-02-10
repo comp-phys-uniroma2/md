@@ -1,12 +1,12 @@
 #!/bin/bash
 
-rm KUP.dat
-touch KUP.dat
+rm data/KUP.dat
+touch data/KUP.dat
 
 for T in 160 170 180 190 200 210
 do
-   Ek=`awk '{if(NR==1){print $2}}' av_$T.dat`
-   U=`awk '{if(NR==1){print $4}}' av_$T.dat`
-   P=`awk '{if(NR==1){print $6}}' av_$T.dat`
-   echo $T $Ek $U $P >> KUP.dat 
+   Ek=`awk '{if(NR==1){print $2}}' data/av_$T.dat`
+   U=`awk '{if(NR==1){print $4}}' data/av_$T.dat`
+   P=`awk '{if(NR==1){print $6}}' data/av_$T.dat`
+   echo $T $Ek $U $P >> data/KUP.dat 
 done

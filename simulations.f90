@@ -87,7 +87,7 @@ module simulations
 
     end do  
 
-    !open(101,file='positions.dat')
+    !open(101,file='data/positions.dat')
     !call write_coords(101)
     !close(101)  
 
@@ -166,11 +166,11 @@ module simulations
     call set_clock()
     !write(ind,'(i3.3)') n
     !open(101,file='coord'//ind//'.xyz')
-    open(101,file='coord.xyz')
+    open(101,file='data/coord.xyz')
     write(101,'(i0)') Natoms
     write(101,*) 'Frame',0
     call write_xyz(101)
-    open(102,file='R2.dat')
+    open(102,file='data/R2.dat')
 
     ! init time
     do n=1,nstep1
@@ -271,7 +271,7 @@ module simulations
 
     deallocate(x1,v1)  
 
-    open(102,file='av.dat')
+    open(102,file='data/av.dat')
     write(102,'(9x,3(a3,ES14.6,2x))') 'Ek=',Kav,'U=',Uav,'P=',Pav 
     write(102,*) 'Rcm=',Rcm
     write(102,*) 'Diffusivity=',Diff/dt,'nm^2/fs'
@@ -386,7 +386,7 @@ module simulations
      end do
       
 
-     open(101,file='g.dat')
+     open(101,file='data/g.dat')
      do m = 1, Nk
         r = m*dr
         write(101,*) r, gg(m)*Vol/(4.d0*Natoms*Natoms*Pi*r*r*dr)  

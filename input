@@ -1,10 +1,10 @@
 4000    ! Natoms
-5.397    ! Lx      [nm] 
-5.397   ! Ly      [nm] 
-5.397    ! Lz      [nm] 
+5.405    ! Lx      [nm] 
+5.405   ! Ly      [nm] 
+5.405    ! Lz      [nm] 
 10 10 10
 1.0    ! Rc      [nm] 
-170    ! Temp    [K]
+190    ! Temp    [K]
 39.948 ! Mass    [AMU]
 0.0103 ! epsilon [eV]
 0.3405 ! sigma   [nm] 
