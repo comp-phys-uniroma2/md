@@ -21,7 +21,7 @@ module parameters
 
  logical :: scaling     ! velocity rescaling
 
- real(dp), dimension(:,:), allocatable :: x
+ real(dp), dimension(:,:), allocatable :: x  ! x(1:3, j) j indice di partic
  real(dp), dimension(:,:), allocatable :: v 
 
  contains

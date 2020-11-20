@@ -32,7 +32,7 @@ module list
   end interface add     
 
   interface remove 
-     module procedure remove_int2
+     module procedure remove_int
      module procedure remove_node
      module procedure rm_array_int
   end interface remove     
@@ -54,18 +54,21 @@ module list
   end subroutine write_list
   
   !------------------------------------------------------
+  ! List%start -> nodo1%next -> nodo2%next -> nodo3%next => node
+  ! List%last  ---- ------------------------------------------^
   subroutine add_node(list,node)
      type(Tlist)  :: list
      type(Tnode), pointer :: node
 
-     if (.not.associated(list%last)) then
+     ! Associated controlla che start /= null
+     if (.not.associated(list%start)) then
         list%start => node 
         list%last => node 
      else
         list%last%next => node
         list%last => node
      endif
-
+ 
   end subroutine add_node   
 
   !------------------------------------------------------
@@ -75,7 +78,7 @@ module list
 
      type(Tnode), pointer :: node
      integer :: err
-
+     
      allocate(node, stat= err)
 
      if (err.ne.0) STOP 'NODE ALLOCATION ERROR' 
@@ -87,11 +90,18 @@ module list
   end subroutine add_int
 
   !------------------------------------------------------
+  ! RIMUOVE DA UNA LISTA IL NODO DELLA
+  ! PARTICELLA CON INDICE val. OVVIAMENTE
+  ! IL NODO NON VIENE DEALLOCATO, MA
+  ! VIENE AGGANCIATO AD UN'ALTRA LISTA.
+  !                    |---------------------------|
+  ! List%start -> nodo1%next   nodo2%next   nodo3%next => node
+  !                             nodo2%val 
+  ! List%last  ---------------------------------------------^
+  ! 
   !------------------------------------------------------
-  subroutine remove_int(list, vnode, val) ! RIMUOVE DA UNA LISTA IL NODO DELLA
-                                          ! PARTICELLA CON INDICE val. OVVIAMENTE
-                                          ! IL NODO NON VIENE DEALLOCATO, MA
-                                          ! VIENE AGGANCIATO AD UN'ALTRA LISTA.
+  subroutine remove_int(list, vnode, val)
+
      type(Tlist)  :: list
      type(Tnode), pointer :: vnode ! NODE TROVATO DA CONSEGNARE IN USCITA 
      integer, intent(in) :: val
@@ -118,7 +128,7 @@ module list
         node%next => null()
         vnode => node
      else
-        do 
+        do  
            node => node%next
            if (associated(node)) then 
               if (node%val == val) then ! SE HO TROVATO LA PARTICELLA DA RIMUOVERE
@@ -150,10 +160,11 @@ module list
  
     pnode => list%start
     node => list%start
-    if (node%val == val) goto 1002 ! CASO list%start%val == val
+!    if (node%val == val) goto 1002
+
     do
         node => node%next
-   1002 if (associated(node)) then
+        if (associated(node)) then
             if (node%val==val) then
                 vnode => node
                 pnode%next => node%next

@@ -22,6 +22,10 @@ module boxes
 
   contains
 
+  !               x
+  ! |---|---|---|---|---|---|---|---|---|---|
+  ! 0 lx          4                         LLx
+    
   subroutine create_boxes(x,y,z,cutoff)
     real(dp) :: x, y, z, cutoff
     integer :: err
@@ -126,13 +130,17 @@ module boxes
   end subroutine boxind
 
   !//////////////////////////////////////////////////////////////
-  subroutine folding(ii,jj,kk,g) ! SERVE PER LA PERIODICITÀ E
-                                 ! E PER ASSEGNARE LE BOXES
-     integer :: ii, jj, kk, m
-     real(dp) :: g(3)
-     !integer :: i,j,k
-     
-     !i=ii; j=jj; k=kk;
+  !                  
+  !   ---||---|---|---|---|---||-o-|---|---|---|---|---|
+  !      0                   LLx
+  !                             x(t+dt)
+  !    x(t+dt)=x(t+dt) + g    
+  subroutine folding(ii,jj,kk,g)
+    
+     integer, intent(inout) :: ii, jj, kk
+     real(dp), intent(out) :: g(3)
+
+     integer :: m
 
      g=0.d0
 
