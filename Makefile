@@ -28,14 +28,14 @@ $(TARGET1): $(OBJS1)
 	$(FC) -o $(TARGET1) $(OBJS1) $(LIBS)
 
 
-test: test.o
+test: list.o clock.o
 	$(FC) $(FLAGS) -c test.f90
 	$(FC) -o test  test.o list.o clock.o
 
 
 
 clean:
-	rm *.o *.mod #$(TARGET1) 
+	rm *.o *.mod $(TARGET1) 
 
 parameters.o : constants.o
 boxes.o : constants.o
