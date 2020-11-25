@@ -1,5 +1,5 @@
-module constants 
-  integer,  parameter :: dp = 8
+module constants
+  use precision    
   real(dp), parameter :: Pi =  3.14159265358979323844_dp 
   real(dp), parameter :: Kb = 8.6173850d-5    ! eV/K
   real(dp), parameter :: m_H= 1822.8966d0     ! m_e

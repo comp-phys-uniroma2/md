@@ -1,5 +1,5 @@
 
-FC = gfortran 
+FC = gfortran
 #FC = ifort
 FLAGS = -O3
 #FC = ifort 
@@ -7,7 +7,8 @@ FLAGS = -O3
  
 TARGET1 = md 
 
-SOURCES1 = constants.f90 \
+SOURCES1 = precision.f90 \
+         constants.f90 \
 	   parameters.f90 \
 	   list.f90 \
 	   boxes.f90 \
@@ -37,6 +38,7 @@ test: list.o clock.o
 clean:
 	rm *.o *.mod $(TARGET1) 
 
+constants.o : precision.o
 parameters.o : constants.o
 boxes.o : constants.o
 simulations.o : constants.o parameters.o forces.o dynamics.o clock.o

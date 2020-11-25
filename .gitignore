@@ -1,2 +1,6 @@
 *.o
 *.mod
+data/*
+md
+input
+

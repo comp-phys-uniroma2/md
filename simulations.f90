@@ -100,13 +100,18 @@ module simulations
   ! => v^2 = +/- sqrt( - m/2kT * ln(P/P0) ) 
   function maxwell_boltzmann() result(v)
     real(dp) :: v
-    real(dp) :: rndr, b 
+    real(dp) :: rndr, b, eps
+
+    ! Define machine precision 
+    ! This is used to change the interval [0,1) into (0,1]
+    eps = mach()  
 
     call random_number(rndr)
-    b= cos(2.d0*Pi*rndr)
+    b= cos(2.0_dp*Pi*rndr)
     do 
        call random_number(rndr)
-       v = b*sqrt( - 2.d0 * kb * Temp/Mass * log(rndr) )
+       
+       v = b*sqrt( - 2.0_dp * kb * Temp/Mass * log(rndr+eps) )
        exit
     enddo
 
@@ -175,13 +180,12 @@ module simulations
     ! init time
     do n=1,nstep1
        
-       if (mod(n,20) == 0) then
-        
-         write(101,'(i0)') Natoms
-         write(101,*) 'Frame',n 
-         call write_xyz(101)
+       !if (mod(n,20) == 0) then
+       !  write(101,'(i0)') Natoms
+       !  write(101,*) 'Frame',n 
+       !  call write_xyz(101)
          !write(101,*)
-       endif
+       !endif
 
        !write(*,*) 'propagate verlet'   
        call verlet(x,v,x1,v1,U,virial,dt,lj)
@@ -189,7 +193,9 @@ module simulations
        K = kinetic()  
        P = (Natoms*kb*Temp + virial/3.d0)/Vol
 
-       write(*,'(i6,3x,3(a3,ES14.6,2x))') n,'Ek=',K,'U=',U,'P=',P 
+       if (mod(n,100) == 0) then
+         write(*,'(i6,a,i6,3x,3(a3,ES14.6,2x))') n,'/',nstep1,'Ek=',K,'U=',U,'P=',P 
+       end if
 
        !write(*,*) 'Update boxes'   
        call update_boxes(x,x1)
@@ -212,12 +218,12 @@ module simulations
 
     do n=1,nstep2
        
-       if (mod(n,20) == 0) then
-         write(101,*) Natoms
-         write(101,*) 'Frame',n 
-         call write_xyz(101)
-         !write(101,*)
-       endif
+       !if (mod(n,20) == 0) then
+       !  write(101,*) Natoms
+       !  write(101,*) 'Frame',n 
+       !  call write_xyz(101)
+       !  !write(101,*)
+       !endif
 
        !write(*,*) 'Sim :',n,'propagate verlet'   
        call verlet(x,v,x1,v1,U,virial,dt,lj)
@@ -225,8 +231,8 @@ module simulations
        K = kinetic()  
        P = (Natoms*kb*Temp + virial/3.d0)/Vol
 
-       if (mod(n,10) == 0) then
-         write(*,'(i6,3x,3(a3,ES14.6,2x))') n,'Ek=',K,'U=',U,'P=',P 
+       if (mod(n,100) == 0) then
+         write(*,'(i6,a,i6,3x,3(a3,ES14.6,2x))') n,'/',nstep2,'Ek=',K,'U=',U,'P=',P 
        end if
 
        !write(*,*) 'Update boxes'   
