@@ -5,6 +5,16 @@ module dynamics
   private
 
   public :: verlet
+  
+  interface  
+    subroutine Tforces(x,F,U,virial)
+      use constants, only : dp
+      real(dp), dimension(:,:), intent(in) :: x
+      real(dp), dimension(:,:), intent(out) :: F
+      real(dp), intent(out) :: U
+      real(dp), intent(out) :: virial
+    end subroutine Tforces
+  end interface
 
   contains
 
@@ -14,15 +24,7 @@ module dynamics
     real(dp), intent(out) :: U
     real(dp), intent(out) :: virial
     real(dp), intent(in) :: dt
-    interface 
-      subroutine forces(x,F,U,virial)
-        use constants, only : dp
-        real(dp), dimension(:,:), intent(in) :: x
-        real(dp), dimension(:,:), intent(out) :: F
-        real(dp), intent(out) :: U
-        real(dp), intent(out) :: virial
-      end subroutine forces
-    end interface
+    procedure(Tforces) :: forces
 
     real(dp), dimension(:,:), allocatable :: F, F1
     integer :: err
