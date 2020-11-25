@@ -24,6 +24,8 @@ module input
     read(*,*) dt
     read(*,*) scaling
     read(*,*) dr
+    read(*,*) print_xyz
+    read(*,*) xyz_interval
 
   end subroutine
 

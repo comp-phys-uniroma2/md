@@ -20,6 +20,8 @@ module parameters
  real(dp) :: dr          ! step in sampling g(r) 
 
  logical :: scaling     ! velocity rescaling
+ logical :: print_xyz     ! print xyz files
+ integer :: xyz_interval  ! print every so many steps 
 
  real(dp), dimension(:,:), allocatable :: x  ! x(1:3, j) j indice di partic
  real(dp), dimension(:,:), allocatable :: v 

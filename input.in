@@ -13,3 +13,5 @@
 10     ! dt      [fs]
 .true. ! velocity scaling
 0.01   ! dr
+.false. ! write xyz file
+100    ! write interval

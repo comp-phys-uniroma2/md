@@ -47,8 +47,8 @@ module forces
      Fa = 24.d0*rm2*(2.d0*rm12-rm6)
      Ua = 4.d0*(rm12-rm6)
 
-     write(*,*) 'Uc=',Uc,'Fc=',Fc
-     write(*,*) 'Um=',Ua,'Fm=',Fa
+     write(*,*) 'Uc=',Uc*par%eps,'Fc=',Fc*par%eps
+     write(*,*) 'Um=',Ua*par%eps,'Fm=',Fa*par%eps
      
   end subroutine init_lj
 
@@ -107,7 +107,7 @@ module forces
                   if (r2 .le. ra2) then
                      F(:,m) = F(:,m) - (Fa-Fc)*rij
                      UU = UU + (Ua-Uc)
-                     virial = virial - dot_product(rij,F(:,m))
+                     virial = virial + dot_product(rij,F(:,m))
                      it => it%next
                      cycle
                   endif
@@ -121,7 +121,7 @@ module forces
                      tmp = 24.d0*rm2*(2.d0*rm12-rm6)     
                      F(:,m) = F(:,m) - (tmp-Fc) * rij 
                      UU = UU + (4.d0*(rm12-rm6) - Uc)  
-                     virial = virial - dot_product(rij,F(:,m))
+                     virial = virial + dot_product(rij,F(:,m))
                   endif
                   
                   it => it%next

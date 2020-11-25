@@ -169,23 +169,23 @@ module simulations
     write(*,*) 'Target T=',Temp,'K=',(3.d0*Natoms*kb*Temp/2.d0)
 
     call set_clock()
-    !write(ind,'(i3.3)') n
-    !open(101,file='coord'//ind//'.xyz')
-    open(101,file='data/coord.xyz')
-    write(101,'(i0)') Natoms
-    write(101,*) 'Frame',0
-    call write_xyz(101)
+    
+    if (print_xyz) then
+      open(101,file='data/coord.xyz')
+      write(101,'(i0)') Natoms
+      write(101,*) 'Frame',0
+      call write_xyz(101)
+    end if  
     open(102,file='data/R2.dat')
 
     ! init time
     do n=1,nstep1
        
-       !if (mod(n,20) == 0) then
-       !  write(101,'(i0)') Natoms
-       !  write(101,*) 'Frame',n 
-       !  call write_xyz(101)
-         !write(101,*)
-       !endif
+       if (print_xyz .and. mod(n,xyz_interval) == 0) then
+          write(101,'(i0)') Natoms
+          write(101,*) 'Frame',n 
+          call write_xyz(101)
+       endif
 
        !write(*,*) 'propagate verlet'   
        call verlet(x,v,x1,v1,U,virial,dt,lj)
@@ -193,11 +193,10 @@ module simulations
        K = kinetic()  
        P = (Natoms*kb*Temp + virial/3.d0)/Vol
 
-       if (mod(n,100) == 0) then
+       if (mod(n,xyz_interval) == 0) then
          write(*,'(i6,a,i6,3x,3(a3,ES14.6,2x))') n,'/',nstep1,'Ek=',K,'U=',U,'P=',P 
        end if
 
-       !write(*,*) 'Update boxes'   
        call update_boxes(x,x1)
 
        x = x1
@@ -218,24 +217,21 @@ module simulations
 
     do n=1,nstep2
        
-       !if (mod(n,20) == 0) then
-       !  write(101,*) Natoms
-       !  write(101,*) 'Frame',n 
-       !  call write_xyz(101)
-       !  !write(101,*)
-       !endif
+       if (print_xyz .and. mod(n,xyz_interval) == 0) then
+         write(101,*) Natoms
+         write(101,*) 'Frame',n 
+         call write_xyz(101)
+       endif
 
-       !write(*,*) 'Sim :',n,'propagate verlet'   
        call verlet(x,v,x1,v1,U,virial,dt,lj)
 
        K = kinetic()  
        P = (Natoms*kb*Temp + virial/3.d0)/Vol
 
-       if (mod(n,100) == 0) then
+       if (mod(n,xyz_interval) == 0) then
          write(*,'(i6,a,i6,3x,3(a3,ES14.6,2x))') n,'/',nstep2,'Ek=',K,'U=',U,'P=',P 
        end if
 
-       !write(*,*) 'Update boxes'   
        call update_boxes(x,x1)
 
        x = x1
@@ -262,7 +258,9 @@ module simulations
 
     end do
 
-    close(101)
+    if (print_xyz) then
+      close(101)
+    end if
     close(102)
 
     write(*,*)
