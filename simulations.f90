@@ -10,7 +10,9 @@ module simulations
   private
 
   public :: transform_units
-  public :: init_particles 
+  public :: init_positions_fcc
+  public :: init_velocities 
+  public :: init_seed 
   public :: nve_sim
   public :: write_coords
   public :: compute_g
@@ -18,9 +20,8 @@ module simulations
   contains
 
   ! ---------------------------------------------------------
-  ! Initialize position and velocities of particles
-  ! according to the MB distribution
-  subroutine init_particles()
+  ! Initialize positions of particles as in fcc lattice
+  subroutine init_positions_fcc()
     integer :: i,err  
     real(dp) :: rndr, ax, ay, az, aa(3)
     real(dp) :: bb(3,4)
@@ -75,23 +76,21 @@ module simulations
       enddo
     enddo
 
-    call init_seed()
+  end subroutine init_positions_fcc
+  
+  ! ---------------------------------------------------------
+  ! according to the MB distribution
+  subroutine init_velocities()
 
+    integer :: i    
+    
     do i = 1, Natoms
-
-      !print*,'set velocities'
-      ! Initialize random MB velocities.
       v(1,i) = maxwell_boltzmann()
       v(2,i) = maxwell_boltzmann()
       v(3,i) = maxwell_boltzmann()
-
     end do  
 
-    !open(101,file='data/positions.dat')
-    !call write_coords(101)
-    !close(101)  
-
-  end subroutine init_particles
+  end subroutine init_velocities
 
   ! ---------------------------------------------------------
   ! In ogni direzione P = (m/2PikT)^1/2 exp(-m v^2 / 2kT)
@@ -118,14 +117,21 @@ module simulations
   end function maxwell_boltzmann 
  
   ! ---------------------------------------------------------
-  subroutine init_seed()
+  subroutine init_seed(seed_in)
+    integer, intent(in), optional :: seed_in
+
     integer, dimension(:),allocatable :: seed
     integer :: j
 
     call random_seed(size=j)
     allocate(seed(j))
-    call system_clock(j)
-    seed=j
+
+    if (present(seed_in)) then
+      seed=seed_in
+    else
+      call system_clock(j)
+      seed=j
+    end if  
     call random_seed(put=seed)
     deallocate(seed)
 

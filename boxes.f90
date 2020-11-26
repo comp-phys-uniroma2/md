@@ -11,9 +11,12 @@ module boxes
   public :: boxind
   public :: boxinfo
   public :: folding
-
+  public :: map
+  public :: init_map
    
   type(Tlist), dimension(:,:,:), allocatable :: boxlists
+  integer :: map(3,27)
+
 
   ! PRIVATE STUFF:
   integer :: Nx, Ny, Nz
@@ -192,7 +195,17 @@ module boxes
   
   end subroutine folding
  
+  subroutine init_map()
+    integer :: u, v, w, i
+    i = 1
+    do w=-1, +1 
+      do v=-1, +1
+        do u=-1, +1
+          map(:,i) = (/u,v,w/)
+          i = i + 1    
+        end do
+      end do
+    end do
+  end subroutine init_map
    
-
-
 end module boxes

@@ -18,11 +18,14 @@ program md
 
   write(*,*) 'Set up simulation box'
   call create_boxes(Lx,Ly,Lz,Rc)
+  call init_map()
 
   call boxinfo()
 
   write(*,*) 'Set up particles'
-  call init_particles()
+  call init_seed(111111111)
+  call init_positions_fcc()
+  call init_velocities()
 
 
   write(*,*) 'Starting MD run'

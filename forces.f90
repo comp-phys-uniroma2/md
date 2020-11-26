@@ -36,16 +36,16 @@ module forces
      rm2 = sg2/rc2
      rm6 = rm2*rm2*rm2
      rm12 = rm6*rm6
-     Fc = 24.d0*rm2*(2.d0*rm12-rm6)
-     Uc = 4.d0*(rm12-rm6)
+     Fc = 24.0_dp*rm2*(2.0_dp*rm12-rm6)
+     Uc = 4.0_dp*(rm12-rm6)
 
      ! Compute LJ forces and energy at Rmin= sigma/2
-     ra2 = sg2/4.d0
+     ra2 = sg2/4.0_dp
      rm2 = sg2/ra2
      rm6 = rm2*rm2*rm2
      rm12 = rm6*rm6
-     Fa = 24.d0*rm2*(2.d0*rm12-rm6)
-     Ua = 4.d0*(rm12-rm6)
+     Fa = 24.0_dp*rm2*(2.0_dp*rm12-rm6)
+     Ua = 4.0_dp*(rm12-rm6)
 
      write(*,*) 'Uc=',Uc*par%eps,'Fc=',Fc*par%eps
      write(*,*) 'Um=',Ua*par%eps,'Fm=',Fa*par%eps
@@ -58,88 +58,94 @@ module forces
     real(dp), intent(out) :: UU
     real(dp), intent(out) :: virial
 
-    real(dp) :: rij(3), g(3), r2, rm2, rm6, rm12, tmp
+    real(dp) :: rij(3), g(3), r2, rm2, rm6, rm12, tmp, Fx, Fy, Fz
     integer :: ii, jj, kk, ci, cj, ck, u,v,w
     integer :: m, l
     type(TNode), pointer :: it   
 
     ! Virial should be corrected due to cutoff potential
 
-    UU = 0.d0
-    virial = 0.d0
+    UU = 0.0_dp
+    virial = 0.0_dp
     do m = 1, par%Natoms
 
        ! cerca la scatola ci,cj,ck di i
        call boxind(x(:,m),ci,cj,ck)          
 
-       F(:,m) = 0.d0
+       Fx = 0.0_dp; Fy = 0.0_dp; Fz = 0.0_dp
 
-       do w=-1, +1 ! CALCOLA FORZE SU PARTICELLA m A PARTIRE DALLE
-                   ! PARTICELLE NEI BOX INTORNO E NELLO STESSO.
-         do v=-1, +1
-           do u=-1, +1
+       ! CALCOLA FORZE SU PARTICELLA m A PARTIRE DALLE
+       ! PARTICELLE NEI BOX INTORNO E NELLO STESSO.
 
-              ii = ci + u
-              jj = cj + v
-              kk = ck + w
-              ! controlla se la scatola IN QUESTION È una copia periodica
-              ! ED IN CASO PRENDE I DATI DA QUELLA ORIGINALE
-              ! g e' vettore supercella
-              call folding(ii,jj,kk,g)
+       !$OMP PARALLEL DO DEFAULT(PRIVATE), SHARED(map,boxlists,m,Fa,Fc,Ua,Uc,ra2,rc2,sg2,ci,cj,ck,x) & 
+       !$OMP&   REDUCTION( + : Fx, Fy, Fz, UU, virial) 
+       do u = 1, 27
 
-              ! Iterates over atoms in box (ii,jj,kk)
-              it => boxlists(ii,jj,kk)%start
+         ii = ci + map(1,u)
+         jj = cj + map(2,u)
+         kk = ck + map(3,u)
+
+         ! controlla se la scatola IN QUESTION È una copia periodica
+         ! ED IN CASO PRENDE I DATI DA QUELLA ORIGINALE
+         ! g e' vettore supercella
+         call folding(ii,jj,kk,g)
+
+         ! Iterates over atoms in box (ii,jj,kk)
+         it => boxlists(ii,jj,kk)%start
          
-              do while (associated(it))     
+         do while (associated(it))     
+         
+             l = it%val
+
+             if (l .eq. m) then 
+                 it => it%next
+                 cycle
+             endif
+
+             ! segno corretto rij = rj - ri 
+             rij(:) = x(:,l)+g(:) - x(:,m)
+
+             r2 = dot_product(rij,rij)
              
-                  l = it%val
-
-                  if (l .eq. m) then 
-                      it => it%next
-                      cycle
-                  endif
-
-                  ! segno corretto rij = rj - ri 
-                  rij(:) = x(:,l)+g(:) - x(:,m)
-
-                  r2 = dot_product(rij,rij)
-                  
-                  if (r2 .le. ra2) then
-                     F(:,m) = F(:,m) - (Fa-Fc)*rij
-                     UU = UU + (Ua-Uc)
-                     virial = virial + dot_product(rij,F(:,m))
-                     it => it%next
-                     cycle
-                  endif
+             if (r2 .le. ra2) then
+                Fx = Fx - (Fa-Fc)*rij(1)
+                Fy = Fy - (Fa-Fc)*rij(2)
+                Fz = Fz - (Fa-Fc)*rij(3)
+                UU = UU + (Ua-Uc)
+                virial = virial + rij(1)*Fx+rij(2)*Fy+rij(3)*Fz
+                it => it%next
+                cycle
+             endif
    
-                  if (r2 .ge. rc2) then
-                  else
-                     rm2 = sg2/r2
-                     rm6 = rm2*rm2*rm2
-                     rm12 = rm6*rm6
+             if (r2 .ge. rc2) then
+             else
+                rm2 = sg2/r2
+                rm6 = rm2*rm2*rm2
+                rm12 = rm6*rm6
 
-                     tmp = 24.d0*rm2*(2.d0*rm12-rm6)     
-                     F(:,m) = F(:,m) - (tmp-Fc) * rij 
-                     UU = UU + (4.d0*(rm12-rm6) - Uc)  
-                     virial = virial + dot_product(rij,F(:,m))
-                  endif
-                  
-                  it => it%next
+                tmp = 24.0_dp*rm2*(2.0_dp*rm12-rm6)     
+                Fx = Fx - (tmp-Fc)*rij(1)
+                Fy = Fy - (tmp-Fc)*rij(2)
+                Fz = Fz - (tmp-Fc)*rij(3)
+                UU = UU + (4.0_dp*(rm12-rm6) - Uc)  
+                virial = virial + rij(1)*Fx+rij(2)*Fy+rij(3)*Fz
+             endif
+             
+             it => it%next
 
-              end do
+          end do
 
-            enddo
-          enddo
-        enddo 
-        F(:,m) = F(:,m) * par%eps/sg2
+        end do 
+        !$OMP END PARALLEL DO
+        F(1,m) = Fx
+        F(2,m) = Fy
+        F(3,m) = Fz
      end do
 
-     UU = UU * 0.5d0 * par%eps
-     virial = virial * 0.5d0 * par%eps/sg2
+     F = F * par%eps/sg2
+     UU = UU * 0.5_dp * par%eps
+     virial = virial * 0.5_dp * par%eps/sg2
       
-     !print*,'F(1)=',F(:,1)
-     !print*,F(:,200)
-
   end subroutine lj
 
 end module forces

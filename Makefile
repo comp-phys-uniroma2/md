@@ -1,7 +1,8 @@
 
 FC = gfortran
 #FC = ifort
-FLAGS = -O3
+FLAGS = -O3 -g
+OMP = -fopenmp
 #FC = ifort 
 #FLAGS = -g -CB -check all 
  
@@ -21,17 +22,17 @@ SOURCES1 = precision.f90 \
 OBJS1 = $(SOURCES1:.f90=.o)
 
 %.o: %.f90 
-	$(FC) $(FLAGS) -c  $<
+	$(FC) $(OMP) $(FLAGS) -c  $<
 
 all: $(TARGET1) 
 
 $(TARGET1): $(OBJS1)
-	$(FC) -o $(TARGET1) $(OBJS1) $(LIBS)
+	$(FC) $(OMP) -o $(TARGET1) $(OBJS1) $(LIBS)
 
 
 test: list.o clock.o
 	$(FC) $(FLAGS) -c test.f90
-	$(FC) -o test  test.o list.o clock.o
+	$(FC) -o test test.o list.o clock.o
 
 
 

@@ -6,7 +6,7 @@ rm -fp data/D.dat
 touch data/U.dat
 touch data/D.dat
 
-for val in  140 145 150 155 160 165 170 175 180 185 190 195 200  
+for val in  160 165 170 175 180 185 190 195 200 205 
 do
   echo $val
   sed 's/@TT/'$val'/' input.in > input # sed è una funzione per sostituire testo
