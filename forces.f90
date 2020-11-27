@@ -60,16 +60,19 @@ module forces
 
     real(dp) :: rij(3), g(3), r2, rm2, rm6, rm12, tmp, Fx, Fy, Fz
     integer :: ii, jj, kk, ci, cj, ck, u,v,w
-    integer :: m, l
+    integer :: m, l, Natoms
     type(TNode), pointer :: it   
 
     ! Virial should be corrected due to cutoff potential
 
     UU = 0.0_dp
     virial = 0.0_dp
-    do m = 1, par%Natoms
+    Natoms = par%Natoms
+    !$OMP PARALLEL DO DEFAULT(PRIVATE), SHARED(map,boxlists,Fa,Fc,Ua,Uc,ra2,rc2,sg2,x,F) & 
+    !$OMP&   REDUCTION( + : UU, virial) 
+    do m = 1, Natoms
 
-       ! cerca la scatola ci,cj,ck di i
+       ! cerca la scatola ci,cj,ck di m 
        call boxind(x(:,m),ci,cj,ck)          
 
        Fx = 0.0_dp; Fy = 0.0_dp; Fz = 0.0_dp
@@ -77,8 +80,8 @@ module forces
        ! CALCOLA FORZE SU PARTICELLA m A PARTIRE DALLE
        ! PARTICELLE NEI BOX INTORNO E NELLO STESSO.
 
-       !$OMP PARALLEL DO DEFAULT(PRIVATE), SHARED(map,boxlists,m,Fa,Fc,Ua,Uc,ra2,rc2,sg2,ci,cj,ck,x) & 
-       !$OMP&   REDUCTION( + : Fx, Fy, Fz, UU, virial) 
+       ! !$OMP PARALLEL DO DEFAULT(PRIVATE), SHARED(map,boxlists,m,Fa,Fc,Ua,Uc,ra2,rc2,sg2,ci,cj,ck,x) & 
+       ! !$OMP&   REDUCTION( + : Fx, Fy, Fz, UU, virial) 
        do u = 1, 27
 
          ii = ci + map(1,u)
@@ -136,11 +139,12 @@ module forces
           end do
 
         end do 
-        !$OMP END PARALLEL DO
+        ! !$OMP END PARALLEL DO
         F(1,m) = Fx
         F(2,m) = Fy
         F(3,m) = Fz
      end do
+     !$OMP END PARALLEL DO
 
      F = F * par%eps/sg2
      UU = UU * 0.5_dp * par%eps
