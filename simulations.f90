@@ -85,9 +85,22 @@ module simulations
     integer :: i    
     
     do i = 1, Natoms
-      v(1,i) = maxwell_boltzmann()
-      v(2,i) = maxwell_boltzmann()
-      v(3,i) = maxwell_boltzmann()
+       if(x(3,i) .lt. 0.8_dp) then
+          v(1,i) = -v_drift
+          v(2,i) = 0.d0
+          v(3,i) = 0.d0
+
+       elseif(x(3,i) .gt. 2.8_dp) then
+          v(1,i) = v_drift
+          v(2,i) = 0.d0
+          v(3,i) = 0.d0
+       
+       elseif(x(3,i) .ge. 0.8_dp .and. x(3,i) .le. 2.8_dp)then
+          v(1,i) = maxwell_boltzmann()
+          v(2,i) = maxwell_boltzmann()
+          v(3,i) = maxwell_boltzmann()
+
+       end if
     end do  
 
   end subroutine init_velocities
@@ -195,7 +208,30 @@ module simulations
 
        !write(*,*) 'propagate verlet'   
        call verlet(x,v,x1,v1,U,virial,dt,lj)
+        
+       do i=1, Natoms
+          if(x(3,i) .lt. 0.8_dp) then
+             x1(1,i) = x(1,i) - v_drift*dt
+             x1(2,i) = x(2,i)
+             x1(3,i) = x(3,i)
+             v1(:,i) = v(:,i)
 
+          elseif(x(3,i) .gt. 2.8_dp) then
+             x1(1,i) = x(1,i) + v_drift*dt
+             x1(2,i) = x(2,i)
+             x1(3,i) = x(3,i)
+             v1(:,i) = v(:,i)
+          
+          elseif(x(3,i) .gt. 0.8_dp .and. x1(3,i) .lt. 0.8_dp) then
+             v1(3,i) = -v1(3,i)
+          
+          elseif(x(3,i) .lt. 2.8_dp .and. x1(3,i) .gt. 2.8_dp) then
+             v1(3,i) = -v1(3,i)
+          
+          end if
+       
+       end do
+       
        K = kinetic()  
        P = (Natoms*kb*Temp + virial/3.d0)/Vol
 
@@ -230,7 +266,29 @@ module simulations
        endif
 
        call verlet(x,v,x1,v1,U,virial,dt,lj)
+       
+       do i=1, Natoms
+          if(x(3,i) .lt. 0.8_dp) then
+             x1(1,i) = x(1,i) - v_drift*dt
+             x1(2,i) = x(2,i)
+             x1(3,i) = x(3,i)
+             v1(:,i) = v(:,i)
 
+          elseif(x(3,i) .gt. 2.8_dp) then
+             x1(1,i) = x(1,i) + v_drift*dt
+             x1(2,i) = x(2,i)
+             x1(3,i) = x(3,i)
+             v1(:,i) = v(:,i)
+
+          elseif(x(3,i) .gt. 0.8_dp .and. x1(3,i) .lt. 0.8_dp) then
+             v1(3,i) = -v1(3,i)
+          
+          elseif(x(3,i) .lt. 2.8_dp .and. x1(3,i) .gt. 2.8_dp) then
+             v1(3,i) = -v1(3,i)
+          
+          end if
+       
+       end do
        K = kinetic()  
        P = (Natoms*kb*Temp + virial/3.d0)/Vol
 
