@@ -15,3 +15,4 @@
 0.01   ! dr
 .false. ! write xyz file
 100    ! write interval
+0.01   ! v_drift
