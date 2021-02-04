@@ -18,7 +18,7 @@ module parameters
 
  real(dp) :: Mass        ! in AMU (1822.886 me)
  real(dp) :: dr          ! step in sampling g(r) 
-
+ real(dp) :: v_drift     ! velocity of boundary particles
  logical :: scaling     ! velocity rescaling
  logical :: print_xyz     ! print xyz files
  integer :: xyz_interval  ! print every so many steps 
