@@ -12,8 +12,10 @@ program md
   write(*,*) '-------------------------------'
   call read_input()
  
+  write(*,*) 'transform units'
   call transform_units()
 
+  write(*,*) 'create xv'
   call create_xv()
 
   write(*,*) 'Set up simulation box'
