@@ -44,5 +44,5 @@ parameters.o : constants.o
 boxes.o : constants.o
 simulations.o : constants.o parameters.o forces.o dynamics.o clock.o
 forces.o : constants.o list.o boxes.o 	
-dynamics.o : constants.o parameters.o	
+dynamics.o : constants.o parameters.o boxes.o	
 md.o : constants.o parameters.o list.o boxes.o input.o simulations.o
