@@ -1,7 +1,7 @@
 
 FC = gfortran
 #FC = ifort
-FLAGS = -O3 -g
+FLAGS = -O3 -g -fmax-errors=3
 OMP = -fopenmp
 #FC = ifort 
 #FLAGS = -g -CB -check all 
@@ -18,7 +18,9 @@ SOURCES1 = precision.f90 \
 	   simulations.f90 \
 	   dynamics.f90 \
 	   clock.f90 \
-	   md.f90 
+	   md.f90 \
+	   lyap_n.f90 \
+	   vector.f90
 OBJS1 = $(SOURCES1:.f90=.o)
 
 %.o: %.f90 
@@ -42,7 +44,9 @@ clean:
 constants.o : precision.o
 parameters.o : constants.o
 boxes.o : constants.o
-simulations.o : constants.o parameters.o forces.o dynamics.o clock.o
+lyap_n.o : constants.o parameters.o
+vector.o : constants.o parameters.o
+simulations.o : constants.o parameters.o forces.o dynamics.o clock.o vector.o
 forces.o : constants.o list.o boxes.o 	
-dynamics.o : constants.o parameters.o boxes.o	
+dynamics.o : constants.o parameters.o boxes.o lyap_n.o	
 md.o : constants.o parameters.o list.o boxes.o input.o simulations.o
