@@ -26,7 +26,7 @@ module input
     read(*,*) dr
     read(*,*) print_xyz
     read(*,*) xyz_interval
-    read(*,*) v_drift
+    !read(*,*) v_drift
   end subroutine
 
 

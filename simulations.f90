@@ -227,7 +227,7 @@ module simulations
 
        call verlet(x,v,x1,v1,U,virial,dt,lj)
 
-       call reset_velocities(x,v,x1,v1)
+       !call reset_velocities(x,v,x1,v1)
 
        v = v1
 
@@ -266,7 +266,7 @@ module simulations
 
        call verlet(x,v,x1,v1,U,virial,dt,lj)
 
-       call reset_velocities(x,v,x1,v1)
+       !call reset_velocities(x,v,x1,v1)
 
        v = v1
 

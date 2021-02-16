@@ -9,7 +9,7 @@
 0.0103  ! epsilon [eV]
 0.3405  ! sigma   [nm] 
 100000   ! tinit   [fs]
-0       ! tsim    [fs]
+10000   ! tsim    [fs]
 1       ! dt      [fs]
 .false. ! velocity scaling
 0.01    ! dr
