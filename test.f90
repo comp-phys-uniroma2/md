@@ -8,7 +8,12 @@ program test
   type(TArray) :: array
 
   integer :: i, N, maxsz, val
-  
+
+ do i = -10, 10
+   if (i>=0) print*,i,mod(i,5)
+   if (i<0) print*,i,mod(i+40,5)
+ end do
+ stop
 
   N = 50 
   maxsz= 4*N
