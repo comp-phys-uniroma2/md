@@ -110,40 +110,32 @@ module simulations
         do k=1,3
            if (i.le.3*Natoms) then
               if (i+j-k==4*j-3) then
-                 dx(k,j,i)=0.0_dp
+                 dx(k,j,i)=D0
               else
                  dx(k,j,i)=0.0_dp
               end if
            else
               dx(k,j,i)=0.0_dp
            end if
-           
         end do
-
-     end do
-
-  end do
+      end do
+   end do
           
    do i=1,6*Natoms
      do j=1,Natoms
         do k=1,3
            if (i.gt.3*Natoms) then
               if (i-3*Natoms+j-k==4*j-3) then
-                 dv(k,j,i)=0.0_dp
+                 dv(k,j,i)=D0
               else
                  dv(k,j,i)=0.0_dp
               end if
-          
-
            else
               dv(k,j,i)=0.0_dp
            end if
-           
         end do
-
-     end do
-
-  end do
+      end do
+    end do
 
   end subroutine init_lyapunov
   
@@ -206,8 +198,8 @@ module simulations
     real(dp), dimension(:,:,:), allocatable :: Xlf2,Ylf2,Zlf2
 
     real(dp), dimension(:,:,:),allocatable :: dxf,dvf
-     real(dp), dimension(6*Natoms,6*Natoms) ::d
-    real(dp), dimension(:,:),allocatable :: uv,vu
+    real(dp), dimension(:,:), allocatable :: d_check
+    real(dp), dimension(:,:),allocatable :: uv, dxv
     real(dp), dimension(:,:,:),allocatable :: inf_v
 
     
@@ -262,9 +254,10 @@ module simulations
 
     allocate(dxf(3,Natoms,6*Natoms),stat=err)
     allocate(dvf(3,Natoms,6*Natoms),stat=err)
+    allocate(d_check(6*Natoms,6*Natoms),stat=err)
 
     allocate(uv(6*Natoms,6*Natoms),stat=err)
-    allocate(vu(6*Natoms,6*Natoms),stat=err)
+    allocate(dxv(6*Natoms,6*Natoms),stat=err)
     allocate(inf_v(6*Natoms,6*Natoms,ng),stat=err)
 
     allocate(Lyapunov(6*Natoms),stat=err)
@@ -344,9 +337,9 @@ module simulations
     
     write(*,*) 'Simulation phase:'
     ! init time
-    d=newshape2(dx,dv)
+    d_check = newshape2(dx,dv)
     
-    do n=1,nstep2
+    do n=1, nstep2
      
        if (print_xyz .and. mod(n,xyz_interval) == 0) then
           write(101,'(i0)') Natoms
@@ -362,29 +355,30 @@ module simulations
        !call verlet_nh1_5(x,v,U,virial,dt,lj,K,K0,eta,etaf,xf,vf,dx,dv,dxf,dvf)
        call verlet_nh2_5(x,v,U,virial,dt,lj,K,K0,eta,etaf,xf,vf,dx,dv,dxf,dvf)
 
-       d=newshape2(dxf,dvf)
-
        ! GRAMS-SHMIDT ORTHOGONALIZATION 
        if (mod(n,ngram)==0) then
           pq=pq+1
           
-          call grams( dxf,dvf,vu,uv)
+          call grams(dxf, dvf, dxv, uv)
 
-          do i=1,6*Natoms
-             do j=1,6*Natoms
-                if(j.ne.i) then
-                   if (dot_product(uv(:,i),uv(:,j)).ge. 0.8) then
-                      write(*,*) 'ortornormal error'
-                      write(*,*) dot_product(uv(:,i),uv(:,j))
-                      write(*,*) sqrt(dot_product(uv(:,j),uv(:,j)))
-                      write(*,*) sqrt( dot_product(uv(:,i),uv(:,i)))
-                      stop
-                   end if
+          ! Ly = sum_i log(|dx|)/tfin
+          ! => |dx| = exp(Ly*tfin)
 
-                end if
-             end do
-          end do
-          inf_v(:,:,pq)=vu(:,:)
+          ! CHECKS
+          !do i=1,6*Natoms
+          !   do j=1,6*Natoms
+          !      if(j.ne.i) then
+          !         if (dot_product(uv(:,i),uv(:,j)).ge. 0.8) then
+          !            write(*,*) 'ortornormal error'
+          !            write(*,*) dot_product(uv(:,i),uv(:,j))
+          !            write(*,*) sqrt(dot_product(uv(:,j),uv(:,j)))
+          !            write(*,*) sqrt( dot_product(uv(:,i),uv(:,i)))
+          !            stop
+          !         end if
+          !      end if
+          !   end do
+          !end do
+          inf_v(:,:,pq) = dxv(:,:)
        end if
        
        call update_boxes(x,xf)
@@ -420,7 +414,7 @@ module simulations
 
     end do
 
-    call lyap_numbers(inf_v,Lyapunov,ng,nstep1)
+    call lyap_numbers(inf_v, Lyapunov, ng, nstep2)
 
     do i=1,6*Natoms
       if (Lyapunov(i) .gt.0) then

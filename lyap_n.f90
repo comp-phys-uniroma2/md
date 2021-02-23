@@ -12,16 +12,16 @@ module lyap_n
 contains
 
   subroutine lyap_numbers(a,c,n,m)
-    integer:: i,j,pq,n,m,h,l
-    integer:: err
+    integer, intent(in) :: n, m 
     real(dp),dimension(6*Natoms,6*Natoms,n),intent(in):: a
     real(dp),dimension(6*Natoms),intent(out):: c
+  
+    integer:: i,j,pq,h,l
+    integer:: err
     real(dp),dimension(:,:,:),allocatable :: G
     real(dp),dimension(:,:),allocatable :: Vol,Vol1
     real(dp),dimension(:),allocatable:: lyapsommati
     
-  
-
     allocate(G(6*Natoms,6*Natoms,n),stat=err)
     allocate(Vol(6*Natoms,n),stat=err)
     allocate(Vol1(6*Natoms,n),stat=err)
@@ -34,88 +34,57 @@ contains
      lyapsommati=0.d0
      c=0.d0
 
+     ! Norma vettore
      open(107,file='l_1.dat')
+     ! Generalizzazioni a 5 e 10 vettori
      open(108,file='l_5.dat')
      open(109,file='l_10.dat')
      
 
      do pq=1,n
-        write(*,*) pq,n
-  
-
+       write(*,*) pq,n
         
-       
-       
-   do i=1,6*Natoms
-      if(i==1) then
-         
-         Vol(i,pq)=sqrt(dot_product(a(:,i,pq),a(:,i,pq)))
-        ! write(*,*) vol(i,pq)
-         
-         
-         
-      else
-         Vol(i,pq)=sqrt(GramMatrix(a(:,1:i,pq),i,pq))
+       do i=1,6*Natoms
+         if(i==1) then
+           Vol(i,pq)=sqrt(dot_product(a(:,i,pq),a(:,i,pq)))
+           ! write(*,*) vol(i,pq)
+         else
+           Vol(i,pq)=sqrt(GramMatrix(a(:,1:i,pq),i,pq))
+         end if
 
+         if(vol(i,pq) .eq. 0) then
+            write(*,*) "zero volume"
+            write(*,*) Vol(i-1,pq)
+            write(*,*) Vol(i,pq)
+            do h=1,i
+               write(*,*)'..............................................',i
+               write(*,*) a(:,h,pq)
+            end do
       
-         
-         
+              do h=1,i
+               write(*,*)'..............................................',i
+               do l=1,i
+                  if(l.eq.h) then
+                  write(*,*)'--------norm-------'
+                  write(*,*) dot_product(a(:,h,pq),a(:,l,pq))
+                  write(*,*)'--------norm-------'
+               else
+                  write(*,*) dot_product(a(:,h,pq),a(:,l,pq))
+               end if
       
-         
-      end if
-      if(vol(i,pq) .eq. 0) then
-         write(*,*) "zero volume"
-         write(*,*) Vol(i-1,pq)
-         write(*,*) Vol(i,pq)
-         do h=1,i
-            write(*,*)'..............................................',i
-            write(*,*) a(:,h,pq)
-         end do
-
-           do h=1,i
-            write(*,*)'..............................................',i
-            do l=1,i
-               if(l.eq.h) then
-               write(*,*)'--------norm-------'
-               write(*,*) dot_product(a(:,h,pq),a(:,l,pq))
-               write(*,*)'--------norm-------'
-            else
-               write(*,*) dot_product(a(:,h,pq),a(:,l,pq))
-            end if
-
-         end do
-
-         
-         end do
-         stop
-      end if
-
+            end do
       
-      
+            
+            end do
+            stop
+         end if
+
+      end do
 
    end do
-  
-
-end do
-
-
-
-   
-
-   
-   
-   
-   
-
-
-
-
 
    do i=1,6*Natoms
-
       Vol1(i,:)=log(Vol(i,:))
-
-   
    end do
 
 
@@ -129,35 +98,19 @@ end do
    close(108)
    
 
-do i=1,6*Natoms
-   lyapsommati(i)=sum(Vol1(i,:))/(10*range(Vol1(i,:)))
-end do
+   do i=1,6*Natoms
+     lyapsommati(i)=sum(Vol1(i,:))/(10*range(Vol1(i,:)))
+   end do
 
+   do i=1,6*Natoms
+     if (i==1) then
+       c(i)=lyapsommati(i) 
+     else
+       c(i)= lyapsommati(i)-lyapsommati(i-1)
+     end if   
+   end do
 
-
-do i=1,6*Natoms
-
-   if(i==1) then
-      c(i)=lyapsommati(i)
-      
-   else
-      
-
-      c(i)= lyapsommati(i)-lyapsommati(i-1)
-   end if
-      
-end do
-
-
-
-   
-   
-
-
-
-
-
-end subroutine lyap_numbers
+ end subroutine lyap_numbers
 
 
 
@@ -167,104 +120,42 @@ end subroutine lyap_numbers
    real(dp),dimension(6*natoms,n) :: Vectors
    real(dp),dimension(n,n) :: G_matrix
    real(dp)::f
-    integer,intent(in) :: n
-    integer::p,q,pq
-!!$    do p=1,n
-!!$       write(*,*)'...............................',n
-!!$       do q=1,6*Natoms
-!!$          write(*,*) vectors(q,p)
-!!$       end do
-!!$       write(*,*)'...............................'
-!!$    end do
+   integer,intent(in) :: n
+   integer::p,q,pq
+   !!$    do p=1,n
+   !!$       write(*,*)'...............................',n
+   !!$       do q=1,6*Natoms
+   !!$          write(*,*) vectors(q,p)
+   !!$       end do
+   !!$       write(*,*)'...............................'
+   !!$    end do
 
-   
-
-    
-
-    
-
-    
-
-     
 
     do p=1,n
        do q=1,n
           G_matrix(p,q)=dot_product(Vectors(:,p),Vectors(:,q))
-
        end do
-
     end do
 
-   
-
-!!$         do p=1,n
-!!$            write(*,*) G_matrix(:,p)
-!!$         end do
-
+    !!$    do p=1,n
+    !!$       write(*,*) G_matrix(:,p)
+    !!$    end do
 
     f= finddet(G_matrix,n)
-!!$    write(*,*)'shape', shape(G_matrix),'det',f
-!!$    write(*,*) 'vol',f,n
-!!$    if(pq==) then
-!!$       stop
-!!$    end if
+
+    !!$    write(*,*)'shape', shape(G_matrix),'det',f
+    !!$    write(*,*) 'vol',f,n
+    !!$    if(pq==) then
+    !!$       stop
+    !!$    end if
 
     
-        
-!!$write(*,*)'-----gram---------'
-!!$    
-!!$       do q=1,n
-!!$         write(*,*) G_matrix(:,q)
-!!$
-!!$       end do
-!!$
-!!$    
-!!$       write(*,*)'-----endgram------'
-!!$
-!!$    
-!!$           write(*,*)'-----det---------'
-!!$    
-!!$       
-!!$           
-!!$           write(*,*) size(G_matrix),shape(G_matrix),n
-
-!!$         
-!!$
-!!$       
-!!$
-!!$    
-!!$       write(*,*)'-----enddet------'
-!!$       
-!!$
-!!$           write(*,*) 
-
-
-
     
   end FUNCTION GRAMmatrix
 
   
-
-    
-    
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
   
-    FUNCTION FindDet1(matrix, n) result(finddet)
+  FUNCTION FindDet1(matrix, n) result(finddet)
     IMPLICIT NONE
     REAL(dp), DIMENSION(n,n) :: matrix
     real(dp):: finddet
@@ -273,14 +164,16 @@ end subroutine lyap_numbers
     INTEGER :: i, j, k, l
     LOGICAL :: DetExists = .TRUE.
     l = 1
+
     !Convert to upper triangular form
-!!$    do i=1,n
-!!$       write(*,*) matrix(:,i),n
-!!$    end do
-!!$         if (n==5)then
-!!$       stop
-!!$    end if
-!!$    write(*,*)'---------------'
+    !!$    do i=1,n
+    !!$       write(*,*) matrix(:,i),n
+    !!$    end do
+    !!$         if (n==5)then
+    !!$       stop
+    !!$    end if
+    !!$    write(*,*)'---------------'
+
     DO k = 1, n-1
         IF (matrix(k,k) == 0) THEN
             DetExists = .FALSE.

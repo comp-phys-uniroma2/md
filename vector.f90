@@ -25,29 +25,19 @@ contains
     real(dp) :: D0
     proj=0.d0
     D0=1.0d0
-   
-    
-
     
     !salvare v per ogni pq(lyap)
     v=newshape2(a,b)
     
+    U(:,1) = V(:,1)/sqrt(dot_product(V(:,1),V(:,1)))
 
-    U(:,1) = V(:,1)/sqrt(dot_product (V(:,1),V(:,1)))
-    
-  
-
-    do i = 2,6*Natoms
+    do i = 2, 6*Natoms
       U(:,i) = V(:,i)
       do j = 1,i-1
         U(:,i) = U(:,i) - U(:,j)*dot_product( U(:,j),U(:,i) )/dot_product(U(:,j),U(:,j))
-     end do
-
-     
-      U(:,i) = U(:,i)/sqrt(dot_product ( U(:,i),U(:,i)))
-   end do
-
-   
+      end do
+      U(:,i) = U(:,i)/sqrt(dot_product(U(:,i),U(:,i)))
+    end do
 
 !!$        do i=1,6*Natoms
 !!$             do j=1,6*Natoms
@@ -80,41 +70,34 @@ contains
   
           do i=1,6*Natoms
              do j=1,6*Natoms
-                if(j.ne.i) then
-                   if (dot_product(u(:,i),u(:,j)).ge.0.0001) then
+                if (j.ne.i) then
+                   if (abs(dot_product(u(:,i),u(:,j))).ge.0.0001) then
                       !write(*,*) 'ortornormal error',i,j
                       !write(*,*) dot_product(u(:,i),u(:,j))
                       !write(*,*) sqrt(dot_product(v(:,j),v(:,j)))
                       !write(*,*)sqrt( dot_product(v(:,i),v(:,i)))
                       !write(*,*) sqrt(dot_product(u(:,j),u(:,j)))
                       !write(*,*)sqrt( dot_product(u(:,i),u(:,i)))
-                      do p=1,6*Natoms
+                      !do p=1,6*Natoms
                         ! write(*,*)u(p,i),u(p,j),p
-                      end do
-
+                      !end do
                       
                       stop
                    end if
 
-                else if(j.eq.i) then
+                else if (j.eq.i) then
+
                    if (nint(dot_product(u(:,i),u(:,j))).ne.1) then
                       !write(*,*) 'norm err'
                       !write(*,*) dot_product(u(:,i),u(:,j))
-                      do p=1,6*Natoms
-                         !write(*,*)u(p,i),p
-                      end do
-                      
-
+                      !do p=1,6*Natoms
+                      !   !write(*,*)u(p,i),p
+                      !end do
                    end if
 
                 end if
 
-                
-                   
-                   
-
              end do
-
           end do
    
     
@@ -156,9 +139,6 @@ contains
 
     !ricombinare u in formato 3-D
     call oldshape(u,a,b)
-   
-
-  
          
 
   end subroutine grams
@@ -191,33 +171,14 @@ contains
     real(dp),dimension(6,Natoms,6*Natoms) :: c
     real(dp),dimension(6*Natoms,6*Natoms) :: d
      
-    
+    do i=1,6*Natoms
+       c(1:3,:,i)=a(1:3,:,i)
+       c(4:6,:,i)=b(1:3,:,i)
+    end do
 
     do i=1,6*Natoms
-
-
-       do k=1,6
-          if (k.le.3) then
-             
-             c(k,:,i)=a(k,:,i)
-             
-          else
-             
-             c(k,:,i)=b(k-3,:,i)
-
-
-
-          end if
-           
-        end do
-
-     end do
-
-      
-     do i=1,6*Natoms
-        d(:,i)=reshape(c(:,:,i),(/6*Natoms/))
-
-     end do
+      d(:,i)=reshape(c(:,:,i),(/6*Natoms/))
+    end do
 
 !!$     do i=1,6
 !!$        do k=1,6*Natoms
@@ -231,41 +192,21 @@ contains
 
    
   function newshape2(a,b) result(d)
-    integer:: i,k,j
     real(dp),dimension(3,Natoms,6*Natoms),intent(in) :: a,b
-    real(dp),dimension(3*Natoms,6*Natoms) :: e,f
     real(dp),dimension(6*Natoms,6*Natoms) :: d
      
-        
-     do i=1,6*Natoms
-        e(:,i)=reshape(a(:,:,i),(/3*Natoms/))
-        f(:,i)=reshape(b(:,:,i),(/3*Natoms/))
-
-     end do  
-
-
-     
-
+    integer:: i,k,j
+    real(dp),dimension(3*Natoms,6*Natoms) :: e,f
         
     do i=1,6*Natoms
+      e(:,i)=reshape(a(:,:,i),(/3*Natoms/))
+      f(:,i)=reshape(b(:,:,i),(/3*Natoms/))
+    end do  
 
-
-       do k=1,6*Natoms
-          if (k.le.3*natoms) then
-             
-             d(k,i)=e(k,i)
-             
-          else
-             
-             d(k,i)=f(k-3*natoms,i)
-
-
-
-          end if
-           
-        end do
-
-     end do
+    do i=1,6*Natoms
+      d(1:3*Natoms,i)=e(1:3*Natoms,i)
+      d(3*Natoms+1:6*Natoms,i)=f(1:3*Natoms,i)
+    end do
 
 !!$     do i=1,3*Natoms
 !!$        write(*,*)  e(i,6*Natoms),d(i,6*Natoms)
@@ -304,8 +245,9 @@ contains
 
    subroutine oldshape(a,b,c)
      real(dp),dimension(3,Natoms,6*Natoms),intent(out)::b,c
-     real(dp),dimension(6,Natoms,6*Natoms)::d
      real(dp),dimension(6*Natoms,6*Natoms),intent(in)::a
+
+     real(dp),dimension(6,Natoms,6*Natoms)::d
      integer:: i,k
 
      do i=1,6*Natoms
@@ -314,34 +256,11 @@ contains
 
 
      do i=1,6*Natoms
-
-
-       do k=1,6
-          if (k.le.3) then
-             
-             b(k,:,i)=d(k,:,i)
-             
-          else
-             
-             c(k-3,:,i)=d(k,:,i)
-
-
-
-          end if
-           
-        end do
-
+        b(1:3,:,i)=d(1:3,:,i)
+        c(1:3,:,i)=d(4:6,:,i)
      end do
- 
-
-    
-
-          
 
    end subroutine oldshape
-   
-        
-
      
 
  end module vector

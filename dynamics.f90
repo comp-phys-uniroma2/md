@@ -111,7 +111,7 @@ contains
     if (err.ne.0) STOP 'ALLOCATION ERROR'
 
       
-    Q=Natoms*dt*kb*temp*100000d0
+    Q=Natoms*dt*kb*temp*100000.0_dp
 
     call forces(x,dx,F,lF,U,virial)
     
@@ -183,7 +183,7 @@ contains
     
     if (err.ne.0) STOP 'ALLOCATION ERROR'
 
-    Q=Natoms*dt*kb*temp*50000d0
+    Q=Natoms*dt*kb*temp*50000.0_dp
 
     call forces(x,dx,F,lF,U,virial)
    
@@ -265,7 +265,7 @@ contains
     
     if (err.ne.0) STOP 'ALLOCATION ERROR'
 
-    Q=Natoms*dt*kb*temp*100000d0
+    Q=Natoms*dt*kb*temp*100000.0_dp
 
     call forces(x,dx,F,lF,U,virial)
     
@@ -328,7 +328,7 @@ contains
     
     if (err.ne.0) STOP 'ALLOCATION ERROR'
 
-    Q=Natoms*dt*kb*temp*100000d0
+    Q=Natoms*dt*kb*temp*100000.0_dp
     
     call forces(x,dx,F,lF,U,virial)
    

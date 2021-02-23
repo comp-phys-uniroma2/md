@@ -29,7 +29,7 @@ module parameters
 
  real(dp), dimension(:,:), allocatable :: x
  real(dp), dimension(:,:), allocatable :: v
- real(dp), dimension(:,:,:), allocatable :: eta!Agg
+ real(dp), dimension(:,:,:), allocatable :: eta ! Nose Hoover
  real(dp), dimension(:,:,:), allocatable :: dx
  real(dp), dimension(:,:,:), allocatable :: dv
  
