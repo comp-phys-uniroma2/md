@@ -56,7 +56,7 @@ module forces
     real(dp), dimension(:,:), intent(in) :: x
     real(dp), dimension(:,:), intent(out) :: F
     real(dp), intent(out) :: UU
-    real(dp), intent(out) :: virial
+    real(dp), dimension(:,:), intent(out) :: virial
 
     real(dp) :: rij(3), g(3), r2, rm2, rm6, rm12, tmp, Fm(3)
     integer :: ii, jj, kk, ci, cj, ck, u,v,w
@@ -113,7 +113,16 @@ module forces
              if (r2 .le. ra2) then
                 Fm(:) = Fm(:) - (Fa-Fc)*rij(:)
                 UU = UU + (Ua-Uc)
-                virial = virial + dot_product(rij,Fm)
+                virial(1,1) = virial(1,1) + rij(1)*Fm(1)
+                virial(1,2) = virial(1,2) + rij(1)*Fm(2)
+                virial(1,3) = virial(1,3) + rij(1)*Fm(3)
+                virial(2,1) = virial(2,1) + rij(2)*Fm(1)
+                virial(2,2) = virial(2,2) + rij(2)*Fm(2)
+                virial(2,3) = virial(2,3) + rij(2)*Fm(3)
+                virial(3,1) = virial(3,1) + rij(3)*Fm(1)
+                virial(3,2) = virial(3,2) + rij(3)*Fm(2)
+                virial(3,3) = virial(3,3) + rij(3)*Fm(3)
+                !virial = virial + dot_product(rij,Fm)
                 it => it%next
                 cycle
              endif
@@ -127,7 +136,16 @@ module forces
                 tmp = 24.0_dp*rm2*(2.0_dp*rm12-rm6)
                 Fm(:) = Fm(:) - (tmp-Fc)*rij(:)
                 UU = UU + (4.0_dp*(rm12-rm6) - Uc)
-                virial = virial + dot_product(rij,Fm)
+                virial(1,1) = virial(1,1) + rij(1)*Fm(1)
+                virial(1,2) = virial(1,2) + rij(1)*Fm(2)
+                virial(1,3) = virial(1,3) + rij(1)*Fm(3)
+                virial(2,1) = virial(2,1) + rij(2)*Fm(1)
+                virial(2,2) = virial(2,2) + rij(2)*Fm(2)
+                virial(2,3) = virial(2,3) + rij(2)*Fm(3)
+                virial(3,1) = virial(3,1) + rij(3)*Fm(1)
+                virial(3,2) = virial(3,2) + rij(3)*Fm(2)
+                virial(3,3) = virial(3,3) + rij(3)*Fm(3)
+                
              endif
 
              it => it%next
@@ -136,6 +154,7 @@ module forces
 
         end do
         F(:,m) = Fm(:)
+        
      end do
      !$OMP END PARALLEL DO
 

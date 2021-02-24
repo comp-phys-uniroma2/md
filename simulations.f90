@@ -172,30 +172,34 @@ module simulations
   ! ---------------------------------------------------------
   ! Perform an NVE simulation
   subroutine nve_sim()
-    real(dp), dimension(:,:), allocatable :: x1,v1
-
-    integer :: nstep1,nstep2, err
-    integer :: n
+    real(dp), dimension(:,:), allocatable :: x1,v1,virial
+    real(dp), dimension(:,:), allocatable :: F
+    integer :: nstep1,nstep2, err, sum
+    integer :: n, i, j 
     character(3) :: ind
     real(dp) :: U      ! Potential energy
     real(dp) :: K      ! Kinetic energy
-    real(dp) :: virial ! virial = - Sum_i Sum_j (r_ij * F_ij)
+    !real(dp) :: virial ! virial = - Sum_i Sum_j (r_ij * F_ij)
     real(dp) :: P      ! Pressure (from virial)
     real(dp) :: lambda ! scaling parameter
     real(dp) :: Kav,Uav,Pav ! Averaged quantities
     real(dp) :: R(3),R0(3)  ! For diffusivity
-    real(dp), allocatable :: dR(:)  ! For diffusivity
+    real(dp), allocatable :: dR(:)  ! For diffusivity    
     real(dp) :: R2, R02, Diff, Rcm(3)
-
+   
     Pav = 0.d0
     Uav = 0.d0
     Kav = 0.d0
     Diff = 0.d0
     Rcm = 0.d0
+    
 
     allocate(x1(3,Natoms),stat=err)
     allocate(v1(3,Natoms),stat=err)
     allocate(dR(3*Natoms),stat=err)
+    allocate(virial(3,3), stat=err)
+       
+    allocate(F(3,Natoms),stat=err)
     if (err /= 0) STOP 'ALLOCATION ERROR'
 
     nstep1=nint(tinit/dt)
@@ -207,13 +211,16 @@ module simulations
 
     call set_clock()
 
+    open(101,file='coords.xyz')
+    
+
     if (print_xyz) then
-      open(101,file='data/coords.xyz')
+      !open(101,file='data/coords.xyz')
       write(101,'(i0)') Natoms
       write(101,*) 'Frame',0
       call write_xyz(101)
     end if
-    open(102,file='data/R2.dat')
+    open(102,file='R2.dat')
 
     ! init time
     write(*,*) 'Warm up phase:'
@@ -226,7 +233,7 @@ module simulations
        endif
 
        call verlet(x,v,x1,v1,U,virial,dt,lj)
-
+       
        call reset_velocities(x,v,x1,v1)
 
        v = v1
@@ -234,7 +241,7 @@ module simulations
        call update_boxes(x,x1)
 
        K = kinetic()
-       P = (Natoms*kb*Temp + virial/3.d0)/Vol
+       P = (Natoms*kb*Temp + (virial(1,1)+virial(2,2)+virial(3,3))/3.d0)/Vol
 
        if (mod(n,xyz_interval) == 0) then
          write(*,'(i6,a,i6,3x,4(a3,ES14.6,2x))') n,'/',nstep1,'Ek=',K,'U=',U,'E=',K+U,'P=',P
@@ -256,6 +263,11 @@ module simulations
 
     write(*,*) 'Simulation phase:'
 
+    open(170,file='iniziale.txt')
+    open(171,file='intermedio.txt')
+    open(174, file='pressione.txt')
+   
+
     do n=1,nstep2
 
        if (print_xyz .and. mod(n,xyz_interval) == 0) then
@@ -264,19 +276,43 @@ module simulations
          call write_xyz(101)
        endif
 
+       if (n .eq. 2500) then                   
+          sum = 0
+          do i=1,Natoms
+             if (x(3,i) .gt. 0.8_dp .and. x(3,i) .lt. 2.5_dp) then   
+                write(170,'(2(ES14.6,1x))') x(3,i), v(1,i)
+                sum = sum + 1
+             endif                      
+          enddo
+          call reynolds(x,v,F,U,virial,lj)
+       endif
+ 
+
+       if (n .eq. 22000) then 
+         do i=1,Natoms
+            write(171,'(2(ES14.6,1x))') x(3,i), v(1,i)
+         end do
+         call reynolds(x,v,F,U,virial,lj)
+       endif
+
+
+       if (n .eq. 49000) then
+          call reynolds(x,v,F,U,virial,lj)
+       endif
+       
        call verlet(x,v,x1,v1,U,virial,dt,lj)
-
+       !print*,'F2:',minval(F2),maxval(F2)
        call reset_velocities(x,v,x1,v1)
-
+       
        v = v1
 
        call update_boxes(x,x1)
 
        K = kinetic()
-       P = (Natoms*kb*Temp + virial/3.d0)/Vol
+       P = (Natoms*kb*Temp + (virial(1,1)+virial(2,2)+virial(3,3))/3.d0)/Vol
 
        if (mod(n,xyz_interval) == 0) then
-         write(*,'(i6,a,i6,3x,4(a3,ES14.6,2x))') n,'/',nstep1,'Ek=',K,'U=',U,'E=',K+U,'P=',P
+          write(*,'(i6,a,i6,3x,4(a3,ES14.6,2x))') n,'/',nstep2,'Ek=',K,'U=',U,'E=',K+U,'P=',P
        end if
 
        x = x1
@@ -298,9 +334,28 @@ module simulations
        Rcm = Rcm + R/nstep2
        R2 = dot_product(R,R)
        Diff = Diff + R2/nstep2
+       
+    end do
+   
+
+
+    !Calcolo l'elemento Pxz
+    !Pxz=0.d0
+    !do i=1,Natoms
+    !   Pxz += Mass*v(1,i)*v(3,i) +
+
+    open(172,file='finale.txt')
+    ! file con velocità per interpolazione lineare 
+    do i=1,Natoms
+       write(172,'(2(ES14.6,1x))') x(3,i), v(1,i)
 
     end do
+    close(170)
+    close(174)
+    close(171)
+    close(172)
 
+    
     if (print_xyz) then
       close(101)
     end if
@@ -317,8 +372,9 @@ module simulations
     write(*,*) 'Diffusivity=',Diff/dt,'nm^2/fs'
 
     deallocate(x1,v1)
-
-    open(102,file='data/av.dat')
+    deallocate(F)
+    
+    open(102,file='av.dat')
     write(102,'(9x,3(a3,ES14.6,2x))') 'Ek=',Kav,'U=',Uav,'P=',Pav
     write(102,*) 'Rcm=',Rcm
     write(102,*) 'Diffusivity=',Diff/dt,'nm^2/fs'
@@ -466,7 +522,7 @@ module simulations
      end do
 
 
-     open(101,file='data/g.dat')
+     open(101,file='g.dat')
      do m = 1, Nk
         r = m*dr
         write(101,*) r, gg(m)*Vol/(4.d0*Natoms*Natoms*Pi*r*r*dr)
