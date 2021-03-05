@@ -173,7 +173,6 @@ module simulations
   ! Perform an NVE simulation
   subroutine nve_sim()
     real(dp), dimension(:,:), allocatable :: x1,v1,virial
-    real(dp), dimension(:,:), allocatable :: F
     integer :: nstep1,nstep2, err, sum
     integer :: n, i, j 
     character(3) :: ind
@@ -199,7 +198,6 @@ module simulations
     allocate(dR(3*Natoms),stat=err)
     allocate(virial(3,3), stat=err)
        
-    allocate(F(3,Natoms),stat=err)
     if (err /= 0) STOP 'ALLOCATION ERROR'
 
     nstep1=nint(tinit/dt)
@@ -284,7 +282,7 @@ module simulations
                 sum = sum + 1
              endif                      
           enddo
-          call reynolds(x,v,F,U,virial,lj)
+          call reynolds(x,v,virial)
        endif
  
 
@@ -292,12 +290,12 @@ module simulations
          do i=1,Natoms
             write(171,'(2(ES14.6,1x))') x(3,i), v(1,i)
          end do
-         call reynolds(x,v,F,U,virial,lj)
+         call reynolds(x,v,virial)
        endif
 
 
        if (n .eq. 49000) then
-          call reynolds(x,v,F,U,virial,lj)
+          call reynolds(x,v,virial)
        endif
        
        call verlet(x,v,x1,v1,U,virial,dt,lj)
@@ -372,7 +370,6 @@ module simulations
     write(*,*) 'Diffusivity=',Diff/dt,'nm^2/fs'
 
     deallocate(x1,v1)
-    deallocate(F)
     
     open(102,file='av.dat')
     write(102,'(9x,3(a3,ES14.6,2x))') 'Ek=',Kav,'U=',Uav,'P=',Pav

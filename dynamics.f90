@@ -69,40 +69,36 @@ module dynamics
 
 
 
-  subroutine reynolds(x,v,F,U,virial,forces)
+  subroutine reynolds(x,v,virial)
     
     real(dp), dimension(:,:), intent(in) :: x, v
-    real(dp), dimension(:), allocatable :: z, vx
-    real(dp), dimension(:,:), allocatable :: F, F1
-    real(dp), intent(out) :: U
-    real(dp), dimension(:,:), intent(out) :: virial
-    real(dp) :: vel, Pxz, add
+    real(dp), dimension(:,:), intent(in) :: virial
+    real(dp) :: vel, Pxz
     real(dp) :: Vol, density
-    integer :: err, i 
-    real(dp) :: const
-    procedure(Tforces) :: forces
+    integer :: err, i, maxi, mini
+    real(dp) :: const, eta, dv, dz
+
+    real(dp), dimension(:), allocatable :: z, vx
+
+    allocate(z(Natoms))
+    allocate(vx(Natoms))
+    
     Vol = Lx*Ly*Lz
     density = Mass*Natoms/Vol
 
+    !if (err.ne.0) STOP 'ALLOCATION ERROR'
 
-    allocate(z(Natoms),   stat=err)
-    allocate(vx(Natoms),  stat=err)
-    allocate(F(3,Natoms), stat=err)
-    allocate(F1(3,Natoms), stat=err)
-   
-    
-    if (err.ne.0) STOP 'ALLOCATION ERROR'
-    call forces(x,F,U,virial)
-    
+    ! vx(z) = dvx/dz * z = gam * z
+    ! vx_k = gam * z_k
+    ! Xi^2 = Sum_k (vx_k - gam z_k)^2 
+    ! d/d gam Xi^2 = 0
+    ! gam = Sum_k (z_k vx_k) / Sum_k (z_k)
+    !  
+
     vel = 0.0_dp
-    add = 0.0_dp
-    do i=1,Natoms
-    
-       vel = vel + sqrt(v(1,i)**2 + v(2,i)**2 + v(3,i)**2)
-       Pxz = Mass*v(1,i)*v(3,i)  + x(1,i)*F(2,i)
-       add = add + Pxz
-    enddo
     do i=1,Natoms 
+       vel = vel + sqrt(v(1,i)**2 + v(2,i)**2 + v(3,i)**2)
+       Pxz = Pxz + Mass*v(1,i)*v(3,i) 
        if (x(3,i) .gt. 0.8_dp .and. x(3,i) .lt. 2.5_dp) then   
           z(i) = x(3,i)
           vx(i) = v(1,i)
@@ -110,9 +106,9 @@ module dynamics
           z(i) = 0.0_dp
           vx(i) = 0.00001_dp                 
        endif
-              
     enddo
-    const = add/Vol
+    Pxz = Pxz + virial(1,3)
+    const = Pxz/Vol
     write(*,*) 'Media velocità', vel/Natoms
     !viscosity = -Pxz/(maxval(vx) - minval(vx))/ (z(maxloc(vx))-z(minloc(vx)))
 !!$    _________________________________________________________________________
@@ -130,11 +126,15 @@ module dynamics
 !!$    Pxz must be calculated from equation 13.3.9 once the equilibrium is reached.
 !!$    ____________________________________________________________________________
 
-    write(*,*) 'Shear viscosity = ', const/((maxval(vx) - minval(vx))/(z(maxloc(vx))-z(minloc(vx))))
-    write(*,*) 'Reynold number is', density*(vel/Natoms)/(const/((maxval(vx) - minval(vx))/(z(maxloc(vx))-z(minloc(vx))))) 
+    dv = maxval(vx) - minval(vx)
+    mini = minloc(vx,1)
+    maxi = maxloc(vx,1) 
+    dz = z(maxi)-z(mini)
+    eta =  -const/(dv/dz)
+    write(*,*) 'Shear viscosity = ', eta*M2F*eV2J*1.0d-15/1.0d-27*1.0d2,'mP' 
+    write(*,*) 'Reynold number is', density*(vel/Natoms)/eta
 
     deallocate(z,vx)
-    deallocate(F1)
     end subroutine reynolds
 
     

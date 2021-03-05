@@ -7,4 +7,5 @@ module constants
   real(dp), parameter :: me = 0.510999d6      ! eV
   real(dp), parameter :: M2F= m_H*me/(c**2)   ! eV * (fs/nm)^2
   real(dp), parameter :: M2E= m_H*me          ! eV/AMU
+  real(dp), parameter :: eV2J= 1.60218d-19    ! J/eV
 end module constants
