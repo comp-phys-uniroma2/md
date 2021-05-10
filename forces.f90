@@ -55,8 +55,8 @@ module forces
   subroutine lj(x,dx,F,lF,UU,virial)
     real(dp), dimension(:,:), intent(in) :: x
     real(dp), dimension(:,:,:), intent(in) :: dx
-    real(dp), dimension(:,:), intent(out) :: F
-    real(dp), dimension(:,:,:), intent(out) :: lF
+    real(dp), dimension(:,:), intent(inout) :: F
+    real(dp), dimension(:,:,:), intent(inout) :: lF
     
     real(dp), intent(out) :: UU
     real(dp), intent(out) :: virial
@@ -66,22 +66,21 @@ module forces
     integer :: ii, jj, kk, ci, cj, ck, u,v,w,h
     integer :: m, l, Natoms
     type(TNode), pointer :: it
+    integer, external :: omp_get_thread_num
 
     Natoms = par%Natoms
-    
     ! Virial should be corrected due to cutoff potential
-
     UU = 0.0_dp
     virial = 0.0_dp
     !$OMP PARALLEL DO DEFAULT(PRIVATE), SHARED(map,boxlists,Fa,Fc,Ua,Uc,ra2,rc2,sg2,x,F,lF) &
     !$OMP&   REDUCTION( + : UU, virial)
     do m = 1, Natoms
-
+      
        ! cerca la scatola ci,cj,ck di m
        call boxind(x(:,m),ci,cj,ck)
 
-       Fm = 0.d0
-       lF(:,m,:)=0.d0
+       Fm = 0.0_dp
+       lF(:,m,:)=0.0_dp
   
        do u = 1, 27
                
@@ -104,35 +103,27 @@ module forces
                 cycle
              endif
 
-             rij(:) = x(:,l)+g(:) - x(:,m)
+             rij(:) = x(:,l) + g(:) - x(:,m)
               
              r2 = dot_product(rij,rij)
                
-             ! Questo non si verifica mai
-             !if (r2 .le. ra2) then
-             !   Fm(:) = Fm(:) - (Fa-Fc)*rij(:)
-             !   UU = UU + (Ua-Uc)
-             !   virial = virial + dot_product(rij,Fm)
-             !   it => it%next
-             !   cycle
-             !endif
-
-             if (r2 .ge. rc2) then
-             else
-               rm1 = 1.0_dp/sqrt(r2)
+             if (r2 .lt. rc2) then
+               
                rm2 = sg2/r2
                rm6 = rm2*rm2*rm2
                rm12 = rm6*rm6
+               tmp = 24.0_dp*rm2*(2.0_dp*rm12-rm6)
 
                Fm(:) = Fm(:) - (tmp-Fc) * rij(:)
                UU = UU + (4.0_dp*(rm12-rm6)-Uc)  
                virial = virial + dot_product(rij,Fm(:))
 
-               tmp = 24.0_dp*rm2*(2.0_dp*rm12-rm6)
-               ltmp = 24.0_dp*(8.0_dp*rm6-28.0_dp*rm12)*rm2*rm1
+               ltmp = 24.0_dp*(8.0_dp*rm6-28.0_dp*rm12)*rm2*rm2
+                 
                do h=1,6*Natoms
                  drij(:) = dx(:,l,h) - dx(:,m,h)
-                 lF(:,m,h)=lF(:,m,h)-tmp*drij(:)-ltmp*rij(:)*dot_product(drij(:),rij(:))/sqrt(r2)
+                 lF(:,m,h)=lF(:,m,h)-(tmp-fc)*sg2*drij(:)- &
+                     & ltmp*rij(:)*dot_product(drij(:),rij(:))
                end do
           
              endif
@@ -141,12 +132,13 @@ module forces
 
           end do
 
-        end do           
+        end do 
+        !print*,omp_get_thread_num(),':',Fm
         F(:,m) = Fm(:)          
      end do
      !$OMP END PARALLEL DO
 
-     lF = lF * par%eps/sg2
+     lF = lF * par%eps/(sg2*sg2)
      F = F * par%eps/sg2
      UU = UU * 0.5_dp * par%eps
      virial = virial * 0.5_dp * par%eps/sg2

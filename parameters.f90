@@ -20,12 +20,26 @@ module parameters
  real(dp) :: dr          ! step in sampling g(r)
  real(dp) :: v_drift     ! velocity of boundary particles
  
- integer :: Ngram       !Gram-S steps
- real(dp):: D0          !initial lenght tangent vectors
+ real(dp) :: tgram
+ integer :: Ngram        ! Gram-S steps
+ real(dp):: D0           ! initial lenght tangent vectors
+ real(dp):: Fe=0.0_dp    ! External field
 
- logical :: scaling     ! velocity rescaling
- logical :: print_xyz
- integer :: xyz_interval 
+ real(dp):: Q=400_dp     ! Nose-Hoover mass
+ 
+ logical :: scaling=.false.    ! velocity rescaling
+ logical :: print_xyz=.false.  ! if xyz should be printed
+ integer :: print_interval=1   ! xyz print interval
+
+ ! Stuff for Lyapunov
+ logical :: Dtemp
+ logical :: shnn
+ logical :: do_lyapunov 
+ real(dp) :: Tempf
+ real(dp) :: tsh
+ integer(dp) :: partsint
+
+
 
  real(dp), dimension(:,:), allocatable :: x
  real(dp), dimension(:,:), allocatable :: v

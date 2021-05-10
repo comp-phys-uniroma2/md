@@ -8,11 +8,11 @@ program md
   integer :: i 
 
 
-  write(*,*) 'MD Simulator 0.1'
-  write(*,*) '  + Lyapunov spectrum'
-  write(*,*) '-------------------------------'
-  call read_input()
- 
+  write(*,*) 'MD Simulator 0.1 + Lyapunov spectrum'
+  write(*,*) '------------------------------------'
+  call parse_input()
+  write(*,*) '------------------------------------'
+  
   write(*,*) 'transform units'
   call transform_units()
 
@@ -34,11 +34,12 @@ program md
   !call init_particles()
 
 
+  write(*,*) '------------------------------------'
   write(*,*) 'Starting MD run'
   call nve_sim() 
 
 
-  write(*,*) '-------------------------------'
+  write(*,*) '------------------------------------'
   write(*,*) 'Compute g(r)'
   call compute_g()
 
