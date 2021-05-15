@@ -390,11 +390,11 @@ module simulations
        eta=etaf
        dx=dxf
        dv=dvf
-    print*,'dd: ------------------'
-    d_check = newshape2(dx,dv)
-    do i = 1, 6*Natoms
-      write(*,*) d_check(i,:)
-    end do
+    !print*,'dd: ------------------'
+    !d_check = newshape2(dx,dv)
+    !do i = 1, 6*Natoms
+    !  write(*,*) d_check(i,:)
+    !end do
    
     end do
 
