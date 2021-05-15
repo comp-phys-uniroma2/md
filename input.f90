@@ -4,6 +4,8 @@ module input
   private
 
   public :: parse_input
+ 
+  type(TLyapunovEnum), parameter, public :: LyAlgo = TLyapunovEnum()
 
   contains
   
@@ -79,6 +81,8 @@ module input
        read(val,*) dt
     else if (trim(token)=="Scaling") then
        read(val,*) Scaling
+    else if (trim(token)=="Nose_Hoover") then
+       read(val,*) nose_hoover
     else if (trim(token)=="Print_xyz") then
        read(val,*) print_xyz
     else if (trim(token)=="Print_interval") then
@@ -88,7 +92,15 @@ module input
     else if (trim(token)=="dr") then
        read(val,*) dr
     else if (trim(token)=="Lyapunov") then
-          read(val,*) do_lyapunov
+       read(val,*) do_lyapunov
+    else if (trim(token)=="LyapunovAlgo") then
+       if (trim(val) == "volumes") then 
+         algorithm = LyAlgo%volumes
+       else if (trim(val) == "lengths") then    
+         algorithm = LyAlgo%lengths
+       else if (trim(val) == "QR") then   
+         algorithm = LyAlgo%QR
+       end if
     else if (trim(token)=="Tortho") then
        read(val,*) tgram
     else if (trim(token)=="D0") then
@@ -101,6 +113,8 @@ module input
        read(val,*) shnn
     else if (trim(token)=="Tsh") then
        read(val,*) tsh
+    else if (trim(token)=="Fext") then
+       read(val,*) Fe
     else 
        write(*,*) "Token '",trim(token),"' not recognized"  
     end if

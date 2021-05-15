@@ -12,7 +12,7 @@ program md
   write(*,*) '------------------------------------'
   call parse_input()
   write(*,*) '------------------------------------'
-  
+ print*,'algorithm',algorithm 
   write(*,*) 'transform units'
   call transform_units()
 
@@ -31,8 +31,9 @@ program md
   call init_seed(111111111)
   call init_positions_fcc()
   call init_velocities()
-  !call init_particles()
-
+  if (do_lyapunov) then
+    call init_lyapunov()
+  end if
 
   write(*,*) '------------------------------------'
   write(*,*) 'Starting MD run'

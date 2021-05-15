@@ -22,19 +22,32 @@ module parameters
  
  real(dp) :: tgram
  integer :: Ngram        ! Gram-S steps
- real(dp):: D0           ! initial lenght tangent vectors
+ real(dp):: D0=1.0_dp    ! initial lenght tangent vectors
  real(dp):: Fe=0.0_dp    ! External field
 
- real(dp):: Q=400_dp     ! Nose-Hoover mass
+ real(dp):: Q=5.0_dp     ! Nose-Hoover mass
  
  logical :: scaling=.false.    ! velocity rescaling
+ logical :: nose_hoover=.false. ! nose-hoover thermostat
  logical :: print_xyz=.false.  ! if xyz should be printed
  integer :: print_interval=1   ! xyz print interval
 
  ! Stuff for Lyapunov
+ real(dp) :: LJTU
  logical :: Dtemp
  logical :: shnn
- logical :: do_lyapunov 
+ logical :: do_lyapunov
+
+ type TLyapunovEnum
+   integer :: volumes = 1
+   integer :: lengths = 2
+   integer :: QR = 3
+ end type TLyapunovEnum  
+
+  type(TLyapunovEnum), parameter, public :: LyapunovAlgorithm = TLyapunovEnum()
+ 
+ integer :: algorithm = LyapunovAlgorithm%volumes
+
  real(dp) :: Tempf
  real(dp) :: tsh
  integer(dp) :: partsint

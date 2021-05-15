@@ -5,6 +5,7 @@ module lyap_n
   private
 
   public:: lyap_numbers
+  public:: lyap_numbers2
   public:: write_Lyap
 
 contains
@@ -52,32 +53,31 @@ contains
           Vol(i,pq)=sqrt(GramMatrix(a(:,1:i,pq),i,pq))
         end if
 
-        if (vol(i,pq) .eq. 0) then
-           write(*,*) "zero volume"
-           write(*,*) Vol(i-1,pq)
-           write(*,*) Vol(i,pq)
-           do h=1,i
-              write(*,*)'..............................................',i
-              write(*,*) a(:,h,pq)
-           end do
-      
-           do h=1,i
-              write(*,*)'..............................................',i
-              do l=1,i
-                 if (l.eq.h) then
-                    write(*,*)'--------norm-------'
-                    write(*,*) dot_product(a(:,h,pq),a(:,l,pq))
-                    write(*,*)'--------norm-------'
-                 else
-                    write(*,*) dot_product(a(:,h,pq),a(:,l,pq))
-                 end if
-              end do 
-           end do
-           stop
-        end if
+        !if (vol(i,pq) .eq. 0) then
+        !   write(*,*) "zero volume"
+        !   write(*,*) Vol(i-1,pq)
+        !   write(*,*) Vol(i,pq)
+        !   do h=1,i
+        !      write(*,*)'..............................................',i
+        !      write(*,*) a(:,h,pq)
+        !   end do
+        !
+        !   do h=1,i
+        !      write(*,*)'..............................................',i
+        !      do l=1,i
+        !         if (l.eq.h) then
+        !            write(*,*)'--------norm-------'
+        !            write(*,*) dot_product(a(:,h,pq),a(:,l,pq))
+        !            write(*,*)'--------norm-------'
+        !         else
+        !            write(*,*) dot_product(a(:,h,pq),a(:,l,pq))
+        !         end if
+        !      end do 
+        !   end do
+        !   stop
+        !end if
 
       end do
-
     end do
     
     do i=1,6*Natoms
@@ -93,16 +93,16 @@ contains
     do i=1,6*Natoms
       Vol1(i,:)=log(Vol(i,:))
       if (i==1) then
-         lh(i,:)=vol1(i,:) 
+         lh(i,:) = vol1(i,:) 
       else
-         lh(i,:)= vol1(i,:)-vol1(i-1,:)
+         lh(i,:) = vol1(i,:)-vol1(i-1,:)
       end if
     end do
 
     do i=1,n
-       write(702,*) i,lh(1,i)*2170*n/(tinit)
-       write(703,*) i,lh(96,i)*2170*n/(tinit)
-       write(704,*) i,lh(192,i)*2170*n/(tinit)
+       write(702,*) i,lh(1,i)*LJTU*n/(tsim)
+       write(703,*) i,lh(96,i)*LJTU*n/(tsim)
+       write(704,*) i,lh(192,i)*LJTU*n/(tsim)
     end do
 
     close(702)
@@ -113,7 +113,7 @@ contains
     close(707)
 
     do i=1,6*Natoms
-       lyapsommati(i)=sum(Vol1(i,:))/(tinit-tsim)
+       lyapsommati(i)=sum(Vol1(i,:))/(tsim)
     end do
 
     do i=1,6*Natoms
@@ -126,6 +126,36 @@ contains
 
   end subroutine lyap_numbers
 
+
+
+  subroutine lyap_numbers2(a,c,n)
+    integer, intent(in) :: n
+    real(dp),dimension(6*Natoms,6*Natoms,n),intent(in):: a
+    real(dp),dimension(6*Natoms),intent(out):: c
+  
+    integer :: i,pq 
+    integer:: err
+    real(dp),dimension(:,:),allocatable :: leng
+    
+   
+    allocate(leng(6*Natoms,n),stat=err)
+
+    if (err /= 0) STOP 'ALLOCATION ERROR'
+
+    leng=0.d0
+    c=0.d0
+
+    do pq = 1, n
+      do i = 1, 6*Natoms
+         leng(i,pq) =log(sqrt(dot_product(a(:,i,pq),a(:,i,pq))))
+      end do
+    end do
+
+    do i=1,6*Natoms
+      c(i) = sum(leng(i,:))/tsim
+    end do
+  
+  end subroutine lyap_numbers2
 
   ! ---------------------------------------------------------
   subroutine write_lyap(Lyapunov,Lp,Lm)

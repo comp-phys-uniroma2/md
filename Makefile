@@ -5,7 +5,13 @@ FLAGS = -O3 -g -fmax-errors=3
 OMP = -fopenmp
 #FC = ifort 
 #FLAGS = -g -CB -check all 
- 
+
+LAPACKDIR=../../lapack/lapack-3.9.1
+LAPACK = -L$(LAPACKDIR) -llapack -lrefblas
+#MKL_LIBDIR=/usr/pack/intel_mkl-11.1-ma/mkl/lib/intel64
+#LAPACK=-L$(MKL_LIBDIR) -Wl,-rpath,$(MKL_LIBDIR) -lmkl_intel_lp64 -lmkl_core -lmkl_gnu_thread
+LIBS=$(LAPACK)
+
 TARGET1 = md 
 
 SOURCES1 = precision.f90 \

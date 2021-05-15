@@ -5,46 +5,48 @@ module dynamics
   implicit none
   private
 
-  public :: verlet
-  public :: verlet2
-  public :: verlet_nh1
-  public :: verlet_nh2
-  public :: verlet_nh1_5
-  public :: verlet_nh2_5
+  public :: verlet          ! + ext forces
+  public :: verlet_ly       ! + ext forces
+  public :: verlet_nh15     ! + ext forces
+  public :: verlet_nh15_ly  ! + ext forces
+
+  public :: verlet_nh1_ly   
+  public :: verlet_nh2_ly
+  public :: verlet_nh25_ly
   
   public :: sym4
 
   interface  
-    subroutine Tforces1(x,F,UU,virial)
+    subroutine Tforces(x,F,UU,virial)
       use precision, only : dp
       real(dp), dimension(:,:), intent(in) :: x
-      real(dp), dimension(:,:), intent(inout) :: F
+      real(dp), dimension(:,:), intent(out) :: F
       real(dp), intent(out) :: UU
       real(dp), intent(out) :: virial
-    end subroutine TForces1
+    end subroutine TForces
 
-    subroutine Tforces2(x,dx,F,lF,UU,virial)
+    subroutine Tforces_ly(x,dx,F,lF,UU,virial)
       use precision, only : dp
       real(dp), dimension(:,:), intent(in) :: x
       real(dp), dimension(:,:,:), intent(in) :: dx
-      real(dp), dimension(:,:), intent(inout) :: F
-      real(dp), dimension(:,:,:), intent(inout) :: lF
+      real(dp), dimension(:,:), intent(out) :: F
+      real(dp), dimension(:,:,:), intent(out) :: lF
       real(dp), intent(out) :: UU
       real(dp), intent(out) :: virial
-    end subroutine Tforces2
+    end subroutine Tforces_ly
   end interface
 
 contains
 
   ! ---------------------------------------------------------------------------------
   ! BASIC VERLET ALGORITHM 
-  subroutine verlet(x,v,x1,v1,U,virial,dt,forces,K)
+  subroutine verlet(x,v,x1,v1,U,virial,dt,forces,ext_forces,K)
     real(dp), dimension(:,:), intent(in) :: x, v
     real(dp), dimension(:,:), intent(out) :: x1, v1
     real(dp), intent(out) :: U
     real(dp), intent(out) :: virial
     real(dp), intent(in) :: dt
-    procedure(Tforces1) :: forces
+    procedure(Tforces) :: forces, ext_forces
     real(dp), intent(out) :: K
 
     real(dp), dimension(:,:), allocatable :: F, F1
@@ -56,9 +58,11 @@ contains
 
 
     call forces(x,F,U,virial)
+    call ext_forces(x,F,U,virial)
     x1 = x + v * dt + 0.5_dp*dt*dt*F/Mass
 
     call forces(x1,F1,U,virial) 
+    call ext_forces(x1,F1,U,virial)
     v1 = v + 0.5_dp * (F+F1)/Mass * dt
 
     K=kinetic(v1)
@@ -69,7 +73,7 @@ contains
 
   ! ---------------------------------------------------------------------------------
   ! BASIC VERLET ALGORITHM + Linearized 
-  subroutine verlet2(x,v,x1,v1,U,virial,dt,forces,K,dx,dv,dxf,dvf)
+  subroutine verlet_ly(x,v,x1,v1,U,virial,dt,forces,ext_forces,K,dx,dv,dxf,dvf)
     real(dp), dimension(:,:), intent(in) :: x, v
     real(dp), dimension(:,:), intent(out) :: x1, v1
     real(dp), dimension(:,:,:), intent(in) :: dx,dv
@@ -77,7 +81,7 @@ contains
     real(dp), intent(out) :: U
     real(dp), intent(out) :: virial
     real(dp), intent(in) :: dt
-    procedure(Tforces2) :: forces
+    procedure(Tforces_ly) :: forces, ext_forces
     real(dp), intent(out) :: K
 
     real(dp), dimension(:,:), allocatable :: F, F1
@@ -93,10 +97,12 @@ contains
 
 
     call forces(x,dx,F,lF,U,virial)
+    call ext_forces(x,dx,F,lF,U,virial)
     x1 = x + v * dt + 0.5_dp*dt*dt*F/Mass
     dxf = dx + dv*dt + 0.5_dp*dt*dt*lF/Mass
 
     call forces(x1,dxf,F1,lF1,U,virial) 
+    call ext_forces(x1,dxf,F1,lF1,U,virial) 
     v1 = v + 0.5_dp * (F+F1)/Mass * dt
     dvf= dv+ 0.5_dp*dt*(lF+lF1)/Mass
     
@@ -104,12 +110,63 @@ contains
 
     deallocate(F,F1, lF, lF1)  
 
-  end subroutine verlet2
+  end subroutine verlet_ly
 
 
   ! ---------------------------------------------------------------------------------
   ! VERLET ALGORITHM + Nose-Hoover with 5 levels chain
-  subroutine verlet_nh1_5(x,v,U,virial,dt,forces,K,K0,eta,etaf,xf,vf,dx,dv,dxf,dvf)
+  subroutine verlet_nh15(x,v,U,virial,dt,forces,ext_forces,K,K0,eta,etaf,xf,vf)
+ 
+    real(dp), dimension(:,:), intent(in) :: x, v 
+    real(dp), dimension(:,:), intent(out) :: xf, vf
+    real(dp),dimension(:,:,:), intent(in):: eta
+    real(dp),dimension(:,:,:), intent(out):: etaf
+
+    real(dp), intent(out) :: U
+    real(dp), intent(out) :: virial
+    real(dp), intent(in) :: K0 
+    real(dp), intent(inout) :: K 
+    real(dp), intent(in) :: dt
+    procedure(Tforces) :: forces,ext_forces
+
+    ! locals
+    real(dp), dimension(:,:), allocatable :: F, F1   
+    integer :: err,i
+   
+    allocate(F(3,Natoms), stat=err)
+    allocate(F1(3,Natoms), stat=err) 
+    
+    if (err.ne.0) STOP 'ALLOCATION ERROR'
+
+    call forces(x,F,U,virial)
+    call ext_forces(x,F,U,virial)
+    
+    xf = x + v * dt + 0.5_dp*dt*dt*F/Mass
+
+    call forces(xf,F1,U,virial)
+    call ext_forces(xf,F1,U,virial)
+
+    vf = v+ 0.5_dp*((F+F1)/Mass)*dt-eta(:,:,1)*v*dt/(Q*Natoms)
+    
+    K=kinetic(v)
+
+    etaf(:,:,1)=eta(:,:,1)+ (K-K0)/Q*dt - eta(:,:,1)*eta(:,:,2)*dt
+
+    etaf(:,:,2)=eta(:,:,2)+1/Q*(etaf(:,:,1)*etaf(:,:,1)*Q-K0/Natoms)*dt-eta(:,:,2)*eta(:,:,3)*dt
+
+    etaf(:,:,3)=eta(:,:,3)+1/Q*(etaf(:,:,2)*etaf(:,:,2)*Q-K0/Natoms)*dt-eta(:,:,3)*eta(:,:,4)*dt
+
+    etaf(:,:,4)=eta(:,:,4)+1/Q*(etaf(:,:,3)*etaf(:,:,3)*Q-K0/Natoms)*dt-eta(:,:,4)*eta(:,:,5)*dt
+    
+    etaf(:,:,5)=eta(:,:,5)+1/Q*(eta(:,:,4)*eta(:,:,4)-K0/Natoms)*dt
+
+    deallocate(F,F1)
+
+  end subroutine verlet_nh15
+
+  ! ---------------------------------------------------------------------------------
+  ! VERLET ALGORITHM + Nose-Hoover with 5 levels chain + tangent space propagation
+  subroutine verlet_nh15_ly(x,v,U,virial,dt,forces,ext_forces,K,K0,eta,etaf,xf,vf,dx,dv,dxf,dvf)
  
     real(dp), dimension(:,:), intent(in) :: x, v 
     real(dp), dimension(:,:), intent(out) :: xf, vf
@@ -124,7 +181,7 @@ contains
     real(dp), intent(in) :: K0 
     real(dp), intent(inout) :: K 
     real(dp), intent(in) :: dt
-    procedure(Tforces2) :: forces
+    procedure(Tforces_ly) :: forces, ext_forces
 
     ! locals
     real(dp), dimension(:,:), allocatable :: F, F1   
@@ -140,12 +197,14 @@ contains
     if (err.ne.0) STOP 'ALLOCATION ERROR'
 
     call forces(x,dx,F,lF,U,virial)
+    call ext_forces(x,dx,F,lF,U,virial)
     
     xf = x + v * dt + 0.5_dp*dt*dt*F/Mass
 
     dxf=dx+dv*dt+ 0.5_dp*dt*dt*lF/Mass
 
     call forces(xf,dxf,F1,lF1,U,virial)
+    call ext_forces(xf,dxf,F1,lF1,U,virial)
 
     do i=1,6*Natoms
       dvf(:,:,i)=dv(:,:,i)+dt*(lF(:,:,i)+lF1(:,:,i))*0.5_dp/Mass-(eta(:,:,1)/(Q*Natoms))*dv(:,:,i)*dt
@@ -167,12 +226,12 @@ contains
 
     deallocate(F,F1,lF1,lF)
 
-  end subroutine verlet_nh1_5
+  end subroutine verlet_nh15_ly
 
 
   ! ---------------------------------------------------------------------------------
-  ! VERLET ALGORITHM + Nose-Hoover with 5 levels chain
-  subroutine verlet_nh2_5(x,v,U,virial,dt,forces,K,K0,eta,etaf,xf,vf,dx,dv,dxf,dvf)
+  ! VERLET ALGORITHM + Nose-Hoover with 5 levels chain + Tangent Space Propagation
+  subroutine verlet_nh25_ly(x,v,U,virial,dt,forces,K,K0,eta,etaf,xf,vf,dx,dv,dxf,dvf)
     real(dp), dimension(:,:), intent(in) :: x, v 
     real(dp), dimension(:,:), intent(out) :: xf, vf
 
@@ -188,7 +247,7 @@ contains
     real(dp), intent(in) :: K0 
     real(dp), intent(in) :: dt
     
-    procedure(Tforces2) :: forces
+    procedure(Tforces_ly) :: forces
     
     
     real(dp) :: K_step,K_first
@@ -254,11 +313,11 @@ contains
     
     deallocate(F,F1,etaf_half,lF,lF1,Vf_half)  
 
-  end subroutine verlet_nh2_5
+  end subroutine verlet_nh25_ly
 
   ! ---------------------------------------------------------------------------------
-  ! VERLET ALGORITHM + Nose-Hoover with single level
-  subroutine verlet_nh1(x,v,U,virial,dt,forces,K,K0,eta,etaf,xf,vf,dx,dv,dxf,dvf)
+  ! VERLET ALGORITHM + Nose-Hoover with single level + Tangent space propagation
+  subroutine verlet_nh1_ly(x,v,U,virial,dt,forces,K,K0,eta,etaf,xf,vf,dx,dv,dxf,dvf)
     real(dp), dimension(:,:), intent(in) :: x, v 
     real(dp), dimension(:,:), intent(out) :: xf, vf
     real(dp),dimension(:,:,:), intent(in):: eta
@@ -270,8 +329,7 @@ contains
     real(dp), intent(inout) :: K 
     real(dp), intent(in) :: K0 
     real(dp), intent(in) :: dt
-    !real(dp) :: Q
-    procedure(Tforces2) :: forces
+    procedure(Tforces_ly) :: forces
    
 
     real(dp), dimension(:,:), allocatable :: F, F1   
@@ -293,8 +351,6 @@ contains
     
     if (err.ne.0) STOP 'ALLOCATION ERROR'
 
-    !Q=Natoms*dt*kb*temp*100000.0_dp
-
     call forces(x,dx,F,lF,U,virial)
     
     xf = x + v * dt + 0.5_dp*dt*dt*F/Mass
@@ -313,11 +369,11 @@ contains
 
     deallocate(F,F1,lF1,lF)
 
-  end subroutine verlet_nh1
+  end subroutine verlet_nh1_ly
 
   ! ---------------------------------------------------------------------------------
-  ! VERLET ALGORITHM + Nose-Hoover with single level
-  subroutine verlet_nh2(x,v,U,virial,dt,forces,K,K0,eta,etaf,xf,vf,dx,dv,dxf,dvf)
+  ! VERLET ALGORITHM + Nose-Hoover with single level + Tangent Space
+  subroutine verlet_nh2_ly(x,v,U,virial,dt,forces,K,K0,eta,etaf,xf,vf,dx,dv,dxf,dvf)
     real(dp), dimension(:,:), intent(in) :: x, v 
     real(dp), dimension(:,:), intent(out) :: xf, vf
     real(dp), dimension(:,:,:), intent(in) :: dx,dv
@@ -330,8 +386,7 @@ contains
     real(dp), intent(in) :: K0 
     real(dp), intent(in) :: dt
     real(dp) :: K_step,K_first
-    !real(dp) :: Q
-    procedure(Tforces2) :: forces
+    procedure(Tforces_ly) :: forces
 
 
     real(dp), dimension(:,:), allocatable :: F, F1
@@ -356,8 +411,6 @@ contains
     
     if (err.ne.0) STOP 'ALLOCATION ERROR'
 
-    !Q=Natoms*dt*kb*temp*400.0_dp
-    
     call forces(x,dx,F,lF,U,virial)
    
     dxf=dx+dv*dt
@@ -385,10 +438,10 @@ contains
     
     deallocate(F,F1,etaf_half,lF,lF1,Vf_half)  
 
-  end subroutine verlet_nh2
+  end subroutine verlet_nh2_ly
 
   ! ---------------------------------------------------------------------------------
-  ! VERLET + ??
+  ! VERLET + Gaussian processes 
   subroutine verlet_g(x,v,U,virial,dt,forces,K,K0,a,xf,vf,dx,dv,dxf,dvf)
     real(dp), dimension(:,:), intent(in) :: x, v 
     real(dp), dimension(:,:), intent(out) :: xf, vf
@@ -401,7 +454,7 @@ contains
     real(dp), intent(inout) :: K 
     real(dp), intent(in) :: K0 
     real(dp), intent(in) :: dt
-    procedure(Tforces2) :: forces
+    procedure(Tforces_ly) :: forces
     
 
     real(dp) :: a, K_step,K_first
@@ -454,7 +507,7 @@ contains
     real(dp), intent(out) :: U
     real(dp), intent(out) :: virial
     real(dp), intent(in) :: dt
-    procedure(TForces1) :: forces
+    procedure(TForces) :: forces
     real(dp), intent(out) :: K
 
     real(dp), dimension(:,:), allocatable :: F, F1

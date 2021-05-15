@@ -1,18 +1,26 @@
-960     ! Natoms
-5.405   ! Lx      [nm] 
-2.162   ! Ly      [nm] 
-3.200   ! Lz      [nm] 
-10 4 6
-1.00    ! Rc      [nm] 
-205     ! Temp    [K]
-39.948  ! Mass    [AMU]
-0.0103  ! epsilon [eV]
-0.3405  ! sigma   [nm] 
-100000   ! tinit   [fs]
-10000   ! tsim    [fs]
-1       ! dt      [fs]
-.false. ! velocity scaling
-0.01    ! dr
-.true.  ! write xyz file
-100      ! write interval
-0.0001    ! v_drift [nm/fs]
+Natoms=32
+Lx=1.36     ! [nm] 
+Ly=1.36      ! [nm] 
+Lz=1.36     ! [nm] 
+Nx=2
+Ny=2
+Nz=2
+Tinit=0.0     ![fs]
+Tsim=60.0  ![fs]
+Rc=0.38     ! [nm]
+Temp=120      ! [K]
+Mass=39.948   ![AMU]
+Eps=0.0103    ![eV]
+Sigma=0.3405  ![nm] 
+dt=1.d0       ![fs]
+Nose_Hoover=.true.
+NH_Mass=5d0    
+dr=0.01   
+Scaling= .false. 
+Print_xyz= .false.
+Print_interval=30
+Lyapunov=.true.
+LyapunovAlgo=lengths
+Tortho=30   
+
+

@@ -3,8 +3,8 @@ module vector
   use parameters
   implicit none
 
-  public:: grams
-
+  public :: grams
+  public :: qr
 
 contains
 
@@ -47,6 +47,30 @@ contains
 
   end subroutine grams
 
+   
+  subroutine qr(q,p,lyap_ex)
+    real(dp),dimension(3,Natoms,6*Natoms),intent(in) :: q,p
+    real(dp),dimension(6*Natoms),intent(inout) :: lyap_ex
+    
+    integer:: i,j,info,lwork,n
+    real(dp),dimension(6*Natoms,6*Natoms)::AB
+    real(dp),allocatable:: tau(:),work(:)
+
+    n=6*Natoms
+    lwork=n
+    allocate(tau(n),work(lwork))
+
+    AB=newshape2(q,p)
+   
+    call dgeqr2p(n,n,AB,n,tau,work,info)
+
+    do i=1,6*Natoms
+      if (AB(i,i)> 0.0_dp) then
+        lyap_ex(i)=lyap_ex(i)+log(AB(i,i))/tsim
+      end if    
+    end do
+        
+  end subroutine qr
 
   
 
@@ -107,16 +131,14 @@ contains
      real(dp),dimension(6*Natoms,6*Natoms),intent(in)::a
      real(dp),dimension(3,Natoms,6*Natoms),intent(out)::b,c
 
-     real(dp),dimension(6,Natoms,6*Natoms)::d
+     real(dp),dimension(3*Natoms,6*Natoms):: e, f
      integer:: i,k
 
      do i=1,6*Natoms
-        d(:,:,i)=reshape(a(:,i),(/6,Natoms/))
-     end do
-
-     do i=1,6*Natoms
-        b(1:3,:,i)=d(1:3,:,i)
-        c(1:3,:,i)=d(4:6,:,i)
+        e(1:3*Natoms,i) = a(1:3*Natoms,i) 
+        f(1:3*Natoms,i) = a(3*Natoms+1:6*Natoms,i) 
+        b(:,:,i)=reshape(e(:,i),(/3,Natoms/))
+        c(:,:,i)=reshape(f(:,i),(/3,Natoms/))
      end do
 
    end subroutine oldshape
