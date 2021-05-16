@@ -1,4 +1,4 @@
-module forces
+Module forces
   use constants
   use list
   use boxes
@@ -78,7 +78,7 @@ module forces
     ! Virial should be corrected due to cutoff potential
     UU = 0.0_dp
     virial = 0.0_dp
-    !$OMP PARALLEL DO DEFAULT(PRIVATE), SHARED(map,boxlists,Fa,Fc,Ua,Uc,ra2,rc2,sg2,x,F) &
+    !$OMP PARALLEL DO DEFAULT(PRIVATE), SHARED(Natoms,map,boxlists,Fa,Fc,Ua,Uc,ra2,rc2,sg2,x,F) &
     !$OMP&   REDUCTION( + : UU, virial)
     do m = 1, Natoms
 
@@ -161,7 +161,7 @@ module forces
     ! Virial should be corrected due to cutoff potential
     UU = 0.0_dp
     virial = 0.0_dp
-    !$OMP PARALLEL DO DEFAULT(PRIVATE), SHARED(map,boxlists,Fa,Fc,Ua,Uc,ra2,rc2,sg2,x,F,lF) &
+    !$OMP PARALLEL DO DEFAULT(PRIVATE), SHARED(Natoms,map,boxlists,Fa,Fc,Ua,Uc,ra2,rc2,sg2,x,F,lF) &
     !$OMP&   REDUCTION( + : UU, virial)
     do m = 1, Natoms
 
