@@ -161,8 +161,9 @@ Module forces
     ! Virial should be corrected due to cutoff potential
     UU = 0.0_dp
     virial = 0.0_dp
-    !$OMP PARALLEL DO DEFAULT(PRIVATE), SHARED(Natoms,map,boxlists,Fa,Fc,Ua,Uc,ra2,rc2,sg2,x,F,lF) &
-    !$OMP&   REDUCTION( + : UU, virial)
+    !$OMP PARALLEL DO DEFAULT(PRIVATE), &
+    !$OMP& SHARED(Natoms,map,boxlists,Fa,Fc,Ua,Uc,ra2,rc2,sg2,x,F,lF,dx) &
+    !$OMP& REDUCTION( + : UU, virial)
     do m = 1, Natoms
 
        ! cerca la scatola ci,cj,ck di m
