@@ -47,80 +47,96 @@ module input
   subroutine readvalue(token, val)
     character(20) :: token, val
 
-    if (trim(token)=="Natoms") then
+    if (to_lower(trim(token))=="natoms") then
        read(val,*) Natoms
-    else if (trim(token)=="Lx") then
+    else if (to_lower(trim(token))=="lx") then
        read(val,*) Lx
-    else if (trim(token)=="Ly") then
+    else if (to_lower(trim(token))=="ly") then
        read(val,*) Ly
-    else if (trim(token)=="Lz") then
+    else if (to_lower(trim(token))=="lz") then
        read(val,*) Lz
-    else if (trim(token)=="Nx") then
+    else if (to_lower(trim(token))=="nx") then
        read(val,*) Nx
-    else if (trim(token)=="Ny") then
+    else if (to_lower(trim(token))=="ny") then
        read(val,*) Ny
-    else if (trim(token)=="Nz") then
+    else if (to_lower(trim(token))=="nz") then
        read(val,*) Nz
-    else if (trim(token)=="Rc") then
+    else if (to_lower(trim(token))=="rc") then
        read(val,*) Rc
-    else if (trim(token)=="Rc") then
+    else if (to_lower(trim(token))=="rc") then
        read(val,*) Rc
-   else if (trim(token)=="Temp") then
+   else if (to_lower(trim(token))=="temp") then
        read(val,*) Temp
-    else if (trim(token)=="Mass") then
+    else if (to_lower(trim(token))=="mass") then
        read(val,*) Mass
-    else if (trim(token)=="Eps") then
+    else if (to_lower(trim(token))=="eps") then
        read(val,*) eps
-    else if (trim(token)=="Sigma") then
+    else if (to_lower(trim(token))=="sigma") then
        read(val,*) Sigma
-    else if (trim(token)=="Tinit") then
+    else if (to_lower(trim(token))=="tinit") then
        read(val,*) Tinit
-    else if (trim(token)=="Tsim") then
+    else if (to_lower(trim(token))=="tsim") then
        read(val,*) Tsim
-    else if (trim(token)=="dt") then
+    else if (to_lower(trim(token))=="dt") then
        read(val,*) dt
-    else if (trim(token)=="Scaling") then
+    else if (to_lower(trim(token))=="scaling") then
        read(val,*) Scaling
-    else if (trim(token)=="Nose_Hoover") then
+    else if (to_lower(trim(token))=="nose_hoover") then
        read(val,*) nose_hoover
-    else if (trim(token)=="Print_xyz") then
+    else if (to_lower(trim(token))=="print_xyz") then
        read(val,*) print_xyz
-    else if (trim(token)=="Print_interval") then
+    else if (to_lower(trim(token))=="print_interval") then
        read(val,*) print_interval 
-    else if (trim(token)=="NH_Mass") then
+    else if (to_lower(trim(token))=="nh_mass") then
        read(val,*) Q
-    else if (trim(token)=="dr") then
+    else if (to_lower(trim(token))=="dr") then
        read(val,*) dr
-    else if (trim(token)=="Lyapunov") then
+    else if (to_lower(trim(token))=="lyapunov") then
        read(val,*) do_lyapunov
-    else if (trim(token)=="LyapunovAlgo") then
-       if (trim(val) == "volumes") then 
+    else if (to_lower(trim(token))=="lyapunovalgo") then
+       if (to_lower(trim(val)) == "volumes") then 
          algorithm = LyAlgo%volumes
-       else if (trim(val) == "lengths") then    
+       else if (to_lower(trim(val)) == "lengths") then    
          algorithm = LyAlgo%lengths
-       else if (trim(val) == "QR") then   
+       else if (to_lower(trim(val)) == "qr") then   
          algorithm = LyAlgo%QR
        end if
-    else if (trim(token)=="Tortho") then
+    else if (to_lower(trim(token))=="tortho") then
        read(val,*) tgram
-    else if (trim(token)=="D0") then
+    else if (to_lower(trim(token))=="d0") then
        read(val,*) D0
-    else if (trim(token)=="Dtemp") then
+    else if (to_lower(trim(token))=="dtemp") then
        read(val,*) Dtemp
-    else if (trim(token)=="Tempf") then
+    else if (to_lower(trim(token))=="tempf") then
        read(val,*) Tempf
-    else if (trim(token)=="Shnn") then
+    else if (to_lower(trim(token))=="shnn") then
        read(val,*) shnn
-    else if (trim(token)=="Tsh") then
+    else if (to_lower(trim(token))=="tsh") then
        read(val,*) tsh
-    else if (trim(token)=="Fext") then
+    else if (to_lower(trim(token))=="fext") then
        read(val,*) Fe
     else 
-       write(*,*) "Token '",trim(token),"' not recognized"  
+       write(*,*) "Token '",to_lower(trim(token)),"' not recognized"  
     end if
 
   end subroutine readvalue
 
+  function to_lower(strIn) result(strOut)
+    character(*), intent(in) :: strIn
+    character(len=len(strIn)) :: strOut
+
+    integer :: i,j 
+
+     do i = 1, len(strIn)
+        j = iachar(strIn(i:i))
+        if (j>= iachar("A") .and. j<=iachar("Z") ) then
+           strOut(i:i) = achar(iachar(strIn(i:i))+32)
+        else
+           strOut(i:i) = strIn(i:i)
+        end if
+     end do
+
+  end function to_lower
 
 end module input
 

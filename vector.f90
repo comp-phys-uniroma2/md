@@ -1,4 +1,4 @@
-module vector
+Module vector
   use constants
   use parameters
   implicit none
@@ -48,28 +48,51 @@ contains
   end subroutine grams
 
    
-  subroutine qr(q,p,lyap_ex)
-    real(dp),dimension(3,Natoms,6*Natoms),intent(in) :: q,p
+  subroutine qr(q,p,V,lyap_ex)
+    real(dp),dimension(3,Natoms,6*Natoms),intent(inout) :: q,p
+    real(dp),dimension(6*Natoms,6*Natoms),intent(out):: V
     real(dp),dimension(6*Natoms),intent(inout) :: lyap_ex
     
-    integer:: i,j,info,lwork,n
-    real(dp),dimension(6*Natoms,6*Natoms)::AB
+    integer:: i,j,info,lwork,n,nb
+    real(dp),dimension(:,:), allocatable :: QQ, RR
     real(dp),allocatable:: tau(:),work(:)
+    integer, external :: ilaenv
 
     n=6*Natoms
     lwork=n
+    allocate(QQ(n,n))
+    allocate(RR(n,n))
     allocate(tau(n),work(lwork))
 
-    AB=newshape2(q,p)
+    V=newshape2(q,p)
+    QQ = V
    
-    call dgeqr2p(n,n,AB,n,tau,work,info)
+    call dgeqr2p(n,n,QQ,n,tau,work,info)
+
+    RR = V
+
+    ! Perform Q^T V = R
+    call dormqr('L','T',n,n,n,QQ,n,tau,RR,n,work,lwork,info)
 
     do i=1,6*Natoms
-      if (AB(i,i)> 0.0_dp) then
-        lyap_ex(i)=lyap_ex(i)+log(AB(i,i))/tsim
+      if (RR(i,i)> 0.0_dp) then
+        lyap_ex(i) = lyap_ex(i) + log(RR(i,i))/tsim
       end if    
     end do
-        
+
+    ! Compute optimal block size 
+    nb = ilaenv(1, 'DORGQR', ' ', n, n, n, -1)
+    lwork = nb * n
+    deallocate(work)
+    allocate(work(lwork))
+ 
+    call dorgqr(n,n,n,QQ,n,tau,work,lwork,info)
+       
+    call oldshape(QQ,q,p)
+ 
+    deallocate(QQ,RR)
+    deallocate(work,tau)
+
   end subroutine qr
 
   

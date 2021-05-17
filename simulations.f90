@@ -241,6 +241,7 @@ module simulations
       allocate(uu(6*Natoms,6*Natoms),stat=err)
  
       allocate(Lyapunov(6*Natoms),stat=err)
+      Lyapunov = 0.0_dp
       allocate(L_plus(6*Natoms),stat=err)
       allocate(L_minus(6*Natoms),stat=err)
 
@@ -344,19 +345,16 @@ module simulations
        end if  
        
        if (do_lyapunov) then
-          ! GRAMS-SHMIDT ORTHOGONALIZATION 
+          ! Ly = sum_i log(|dx|)/tfin
+          ! => |dx| = exp(Ly*tfin)
+          ! RE-ORTHOGONALIZATION procedure
           if (mod(n,nstepgram)==0) then
             
-             if (algorithm == LyapunovAlgorithm%QR) then
-                call qr(dxf, dvf, lyapunov)
-                print*,lyapunov   
-                print*,'lyap_max=',maxval(abs(lyapunov))   
-             end if
+             call qr(dxf, dvf, vv, lyapunov)
+             !print*,'lyap_max=',maxval(abs(lyapunov))   
 
-             call grams(dxf, dvf, vv, uu)
+             !call grams(dxf, dvf, vv, uu)
  
-             ! Ly = sum_i log(|dx|)/tfin
-             ! => |dx| = exp(Ly*tfin)
              if (algorithm /= LyapunovAlgorithm%QR) then 
                 pq=pq+1
                 inf_v(:,:,pq) = vv(:,:)
@@ -402,8 +400,10 @@ module simulations
       print*,'COMPUTATION OF LYAPUNOV SPECTRUM'
       select case(algorithm) 
       case(LyapunovAlgorithm%volumes)     
+        print*,'Volumes algorithm is used'     
         call lyap_numbers(inf_v, Lyapunov, ng)
       case(LyapunovAlgorithm%lengths)
+        print*,'Lengths algorithm is used'     
         call lyap_numbers2(inf_v, Lyapunov, ng)
       case(LyapunovAlgorithm%QR)
         print*,'QR algorithm is used'     
@@ -623,7 +623,7 @@ module simulations
      end do
       
 
-     open(101,file='g.dat')
+     open(101,file='data/g.dat')
      do m = 1, Nk
         r = m*dr
         write(101,*) r, gg(m)*Vol/(4.d0*Natoms*Natoms*Pi*r*r*dr)  
