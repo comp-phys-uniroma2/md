@@ -349,8 +349,9 @@ module simulations
           ! => |dx| = exp(Ly*tfin)
           ! RE-ORTHOGONALIZATION procedure
           if (mod(n,nstepgram)==0) then
-            
+             call message_clock("QR orthogonalization") 
              call qr(dxf, dvf, vv, lyapunov)
+             call write_clock()
              !print*,'lyap_max=',maxval(abs(lyapunov))   
 
              !call grams(dxf, dvf, vv, uu)

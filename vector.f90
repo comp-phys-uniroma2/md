@@ -54,25 +54,19 @@ contains
     real(dp),dimension(6*Natoms),intent(inout) :: lyap_ex
     
     integer:: i,j,info,lwork,n,nb
-    real(dp),dimension(:,:), allocatable :: QQ, RR
+    real(dp),dimension(:,:), allocatable :: RR
     real(dp),allocatable:: tau(:),work(:)
     integer, external :: ilaenv
 
     n=6*Natoms
     lwork=n
-    allocate(QQ(n,n))
     allocate(RR(n,n))
     allocate(tau(n),work(lwork))
 
     V=newshape2(q,p)
-    QQ = V
-   
-    call dgeqr2p(n,n,QQ,n,tau,work,info)
-
     RR = V
-
-    ! Perform Q^T V = R
-    call dormqr('L','T',n,n,n,QQ,n,tau,RR,n,work,lwork,info)
+   
+    call dgeqr2p(n,n,RR,n,tau,work,info)
 
     do i=1,6*Natoms
       if (RR(i,i)> 0.0_dp) then
@@ -86,11 +80,11 @@ contains
     deallocate(work)
     allocate(work(lwork))
  
-    call dorgqr(n,n,n,QQ,n,tau,work,lwork,info)
+    call dorgqr(n,n,n,RR,n,tau,work,lwork,info)
        
-    call oldshape(QQ,q,p)
+    call oldshape(RR,q,p)
  
-    deallocate(QQ,RR)
+    deallocate(RR)
     deallocate(work,tau)
 
   end subroutine qr
