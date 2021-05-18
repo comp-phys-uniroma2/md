@@ -1,0 +1,27 @@
+Natoms=108
+Lx=2.04     ! [nm] 
+Ly=2.04      ! [nm] 
+Lz=2.04     ! [nm] 
+Nx=3
+Ny=3
+Nz=3
+Tinit=10000.0     ![fs]
+Tsim=10000.0  ![fs]
+Rc=0.38       ! [nm]
+!Rc=1.0
+Temp=120      ! [K]
+Mass=39.948   ![AMU]
+Eps=0.0103    ![eV]
+Sigma=0.3405  ![nm] 
+dt=1.d0       ![fs]
+Nose_Hoover=.true.
+NH_Mass=5d0    
+dr=0.01   
+Scaling= .false. 
+Print_xyz= .false.
+Print_interval=50
+Lyapunov=.true.
+LyapunovAlgo=lengths
+Tortho=100  
+
+
