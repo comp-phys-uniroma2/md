@@ -1,17 +1,20 @@
-4000    ! Natoms
-5.405    ! Lx      [nm] 
-5.405   ! Ly      [nm] 
-5.405    ! Lz      [nm] 
-10 10 10
-1.35    ! Rc      [nm] 
-@TT    ! Temp    [K]
-39.948 ! Mass    [AMU]
-0.0103 ! epsilon [eV]
-0.3405 ! sigma   [nm] 
-20000  ! tinit   [fs]
-10000  ! tsim    [fs]
-10     ! dt      [fs]
-.true. ! velocity scaling
-0.01   ! dr
-.false. ! write xyz file
-100    ! write interval
+Natoms=400
+Lx=10.5         ! [nm] 
+Ly=5.4          ! [nm] 
+Nx=20
+Ny=10
+Tinit=400.0     ![fs]
+Tsim=800.0      ![fs]
+Rc=1.2
+Temp=200        ![K]
+Mass=39.948     ![AMU]
+Eps=0.0103      ![eV]
+Sigma=0.3405    ![nm] 
+dt=0.1          ![fs]
+Nose_Hoover=.false.
+NH_Mass=400d0   ![eV*fs^2]
+dr=0.01  
+Scaling= .false. 
+Print_xyz= .true.
+Print_interval=100
+V_drift= 0.0    !nm/fs

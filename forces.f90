@@ -1,18 +1,20 @@
-module forces
+Module forces
   use constants
   use list
   use boxes
+  use parameters, only : mass, Area
   implicit none
   private
 
-  public :: lj
   public :: init_lj
+  public :: lj
 
   type Tpar
      integer :: Natoms
      real(dp) :: eps
      real(dp) :: sigma
      real(dp) :: Rc
+     real(dp) :: Fe
   end type
 
   type(Tpar) :: par
@@ -33,6 +35,7 @@ module forces
      ! Compute LJ forces and energy at cutoff
      sg2 = par%sigma*par%sigma
      rc2 = par%Rc*par%Rc
+     
      rm2 = sg2/rc2
      rm6 = rm2*rm2*rm2
      rm12 = rm6*rm6
@@ -52,82 +55,98 @@ module forces
 
   end subroutine init_lj
 
-  subroutine lj(x,F,UU,virial)
+  ! Lennard jones forces
+  subroutine lj(x, v, F, UU, virial, Sxy, xpt)
     real(dp), dimension(:,:), intent(in) :: x
+    real(dp), dimension(:,:), intent(in) :: v
     real(dp), dimension(:,:), intent(out) :: F
+
     real(dp), intent(out) :: UU
     real(dp), intent(out) :: virial
+    real(dp), intent(out) :: Sxy
+    real(dp), intent(out) :: xpt
 
-    real(dp) :: rij(3), g(3), r2, rm2, rm6, rm12, tmp, Fm(3)
-    integer :: ii, jj, kk, ci, cj, ck, u,v,w
-    integer :: m, l, Natoms
+
+    real(dp), dimension(:,:,:), allocatable :: stress_T
+
+    real(dp) :: rij(2), g(2),  Fm(2)
+    real(dp) :: r2, rm1, rm2, rm6, rm12, tmp
+    integer :: ii, jj, ci, cj, u, err
+    integer :: m, l, Natoms, k, p
     type(TNode), pointer :: it
 
-    ! Virial should be corrected due to cutoff potential
+    !integer, external :: omp_get_thread_num
 
+    Natoms = par%Natoms
+
+   allocate(stress_T(2, 2, Natoms),stat=err)
+
+    if (err.ne.0) STOP 'ALLOCATION ERROR'
+    ! Virial should be corrected due to cutoff potential
     UU = 0.0_dp
     virial = 0.0_dp
-    Natoms = par%Natoms
-    !$OMP PARALLEL DO DEFAULT(PRIVATE), SHARED(map,boxlists,Fa,Fc,Ua,Uc,ra2,rc2,sg2,x,F) &
-    !$OMP&   REDUCTION( + : UU, virial)
+    Sxy = 0.0_dp
+    xpt = 0.0_dp
+
+
     do m = 1, Natoms
 
-       ! cerca la scatola ci,cj,ck di m
-       call boxind(x(:,m),ci,cj,ck)
+       ! cerca la scatola ci,cj di m
+       call boxind(x(:,m),ci,cj)
 
        Fm = 0.0_dp
 
-       ! CALCOLA FORZE SU PARTICELLA m A PARTIRE DALLE
-       ! PARTICELLE NEI BOX INTORNO E NELLO STESSO.
-       do u = 1, 27
+       do u = 1, 9
 
          ii = ci + map(1,u)
          jj = cj + map(2,u)
-         kk = ck + map(3,u)
 
-         ! controlla se la scatola IN QUESTION È una copia periodica
-         ! ED IN CASO PRENDE I DATI DA QUELLA ORIGINALE
+         ! controlla se la scatola e' una copia periodica
          ! g e' vettore supercella
-         !print*,'p:',m,ci,cj,ck
-         !print*,'map:',map(:,u)
-         call folding(ii,jj,kk,g)
+         call folding(ii,jj,g)
 
-         ! Iterates over atoms in box (ii,jj,kk)
-         it => boxlists(ii,jj,kk)%start
-
+         ! Iterates over atoms in box (ii,jj)
+         it => boxlists(ii,jj)%start
 
          do while (associated(it))
 
              l = it%val
 
              if (l .eq. m) then
-                 it => it%next
-                 cycle
-             endif
-
-             ! segno corretto rij = rj - ri
-             rij(:) = x(:,l) + g(:) - x(:,m)
-
-             r2 = dot_product(rij,rij)
-
-             if (r2 .le. ra2) then
-                Fm(:) = Fm(:) - (Fa-Fc)*rij(:)
-                UU = UU + (Ua-Uc)
-                virial = virial + dot_product(rij,Fm)
                 it => it%next
                 cycle
              endif
 
-             if (r2 .ge. rc2) then
-             else
-                rm2 = sg2/r2
-                rm6 = rm2*rm2*rm2
-                rm12 = rm6*rm6
+             rij(:) = x(:,l) + g(:) - x(:,m)
 
-                tmp = 24.0_dp*rm2*(2.0_dp*rm12-rm6)
-                Fm(:) = Fm(:) - (tmp-Fc)*rij(:)
-                UU = UU + (4.0_dp*(rm12-rm6) - Uc)
-                virial = virial + dot_product(rij,Fm)
+             r2 = dot_product(rij,rij)
+
+             if (r2 .lt. rc2) then
+               rm2 = sg2/r2
+               rm6 = rm2*rm2*rm2
+               rm12 = rm6*rm6
+               tmp = 24.0_dp*rm2*(2.0_dp*rm12-rm6)
+
+               Fm(:) = Fm(:) - (tmp-Fc) * rij(:)
+               UU = UU + (4.0_dp*(rm12-rm6)-Uc)
+               
+               !isotropic pressure = trace of stress tensor
+               virial = virial + dot_product(rij,Fm(:))
+
+               xpt = xpt + x(1,m)*v(2,m)
+               
+               ! Update the stress tensor elements
+               do k = 1, 2
+                  stress_T(:, k, m) = rij(k) * Fm(:)
+                  do p =1,2
+                  ! Add the kinetic contribution to the stress tensor elements
+                     stress_T(p, k, m) = stress_T(p, k, m) + v(k, m) * v(p, m)*mass
+                  end do
+               end do
+               
+               !evaluate the off diagonal term of stress tensor
+               Sxy= Sxy + stress_T(1, 2, m)
+               
              endif
 
              it => it%next
@@ -135,14 +154,23 @@ module forces
           end do
 
         end do
+        !print*,omp_get_thread_num(),':',Fm
         F(:,m) = Fm(:)
      end do
-     !$OMP END PARALLEL DO
+
+
+
 
      F = F * par%eps/sg2
      UU = UU * 0.5_dp * par%eps
      virial = virial * 0.5_dp * par%eps/sg2
+     Sxy = Sxy/Area
+
+   deallocate(stress_T)
 
   end subroutine lj
+
+
+
 
 end module forces

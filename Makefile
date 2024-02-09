@@ -1,7 +1,7 @@
 
 FC = gfortran
 #FC = ifort
-FLAGS = -O3 -g
+FLAGS = -O3 -g #-fcheck=all -Wall
 OMP = -fopenmp
 #FC = ifort 
 #FLAGS = -g -CB -check all 
