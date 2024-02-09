@@ -31,6 +31,8 @@ module simulations
 
     if (4*Nx*Ny*Nz .ne. Natoms) then
        STOP 'Error: Nx*Ny*Nz != Natoms'
+    else
+       write(*,'(a,2x,i0,"x",i0,"x",i0,3x,a)') "Setup fcc crystal with",Nx,Ny,Nz,"cells"   
     endif
 
     ax = Lx/Nx; ay = Ly/Ny; az = Lz/Nz

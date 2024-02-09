@@ -1,17 +1,17 @@
-960     ! Natoms
-5.405   ! Lx      [nm] 
-2.162   ! Ly      [nm] 
-3.200   ! Lz      [nm] 
-10 4 6
-1.00    ! Rc      [nm] 
-205     ! Temp    [K]
+4000   ! Natoms
+5.4051   ! Lx      [nm] 
+5.4051   ! Ly      [nm] 
+5.4051   ! Lz      [nm] 
+10 10 10 ! Nx Ny Nz
+1.00     ! Rc      [nm] 
+210      ! Temp    [K]
 39.948  ! Mass    [AMU]
 0.0103  ! epsilon [eV]
 0.3405  ! sigma   [nm] 
-100000   ! tinit   [fs]
+20000   ! tinit   [fs]
 10000   ! tsim    [fs]
 1       ! dt      [fs]
-.false. ! velocity scaling
+.true.  ! velocity scaling
 0.01    ! dr
 .true.  ! write xyz file
 100      ! write interval

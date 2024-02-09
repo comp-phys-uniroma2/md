@@ -3,7 +3,7 @@ module parameters
  implicit none
 
  integer :: Natoms       ! Number of atoms 
- integer :: Nx, Ny, Nz   ! Number of atoms in each direction
+ integer :: Nx, Ny, Nz   ! Number of cells
  real(dp) :: Lx, Ly, Lz  ! Box sizes  [nm]
  real(dp) :: Vol
  real(dp) :: Rc          ! Cutoff radius [nm]
